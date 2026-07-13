@@ -1,0 +1,386 @@
+CREATE TABLE emp_role (
+    emp_role_id INT NOT NULL,
+    emp_role_name VARCHAR(50),
+    salary float(10, 2),
+    PRIMARY KEY (emp_role_id)
+);
+
+CREATE TABLE password_status (
+    password_status_id VARCHAR(1) NOT NULL,
+    password_status_name VARCHAR(50),
+    PRIMARY KEY (password_status_id)
+);
+
+CREATE TABLE emp_status (
+    emp_status_id VARCHAR(1) NOT NULL,
+    emp_status_name VARCHAR(50),
+    PRIMARY KEY (emp_status_id)
+);
+
+CREATE TABLE table_status (
+    table_status_id VARCHAR(1) NOT NULL,
+    table_status_name VARCHAR(50),
+    PRIMARY KEY (table_status_id)
+);
+
+CREATE TABLE order_status (
+    order_status_id VARCHAR(1) NOT NULL,
+    order_status_name VARCHAR(50),
+    PRIMARY KEY (order_status_id)
+);
+
+CREATE TABLE order_food_status (
+    serve_status_id VARCHAR(1) NOT NULL,
+    serve_status_name VARCHAR(50),
+    PRIMARY KEY (serve_status_id)
+);
+
+CREATE TABLE status_advice (
+    status_advice_id VARCHAR(1) NOT NULL,
+    status_advice_name VARCHAR(50),
+    PRIMARY KEY (status_advice_id)
+);
+
+CREATE TABLE borrow_status (
+    borrow_status_id VARCHAR(1) NOT NULL,
+    borrow_status_name VARCHAR(50),
+    PRIMARY KEY (borrow_status_id)
+);
+
+CREATE TABLE status_ingredient (
+    status_ingredient_id VARCHAR(1) NOT NULL,
+    status_ingredient_name VARCHAR(50),
+    PRIMARY KEY (status_ingredient_id)
+);
+
+CREATE TABLE catagory_board_game (
+    catagory_bg_id INT NOT NULL,
+    catagory_bg_name VARCHAR(255),
+    PRIMARY KEY (catagory_bg_id)
+);
+
+CREATE TABLE board_game_play (
+    bgp_id INT NOT NULL,
+    bgp_name VARCHAR(255),
+    quantity INT,
+    img_game_play VARCHAR(255),
+    PRIMARY KEY (bgp_id)
+);
+
+CREATE TABLE board_game_sale (
+    bg_id INT NOT NULL,
+    bg_name VARCHAR(255),
+    quantity INT,
+    price DECIMAL(10, 2),
+    img_game_sale VARCHAR(255),
+    PRIMARY KEY (bg_id)
+);
+
+
+CREATE TABLE food_type_ (
+    food_type_id INT NOT NULL,
+    food_type_name VARCHAR(255),
+    PRIMARY KEY (food_type_id)
+);
+
+CREATE TABLE food_list (
+    food_id INT NOT NULL,
+    food_name VARCHAR(255),
+    food_type_id INT, -- ฟิลด์ที่เพิ่มเข้ามาใหม่ตามรูปภาพ
+    PRIMARY KEY (food_id),
+    FOREIGN KEY (food_type_id) REFERENCES food_type_(food_type_id)
+);
+
+CREATE TABLE variants (
+    variant_id INT NOT NULL,
+    variant_name VARCHAR(255),
+    PRIMARY KEY (variant_id)
+);
+
+CREATE TABLE food_options (
+    options_id INT NOT NULL,
+    option_name VARCHAR(255),
+    option_price DECIMAL(10, 2),
+    PRIMARY KEY (options_id)
+);
+
+CREATE TABLE employee (
+    emp_id INT NOT NULL,
+    password VARCHAR(255),
+    emp_first_name VARCHAR(255),
+    emp_last_name VARCHAR(255),
+    emp_role_id INT,
+    age INT,
+    sex VARCHAR(10),
+    emp_status_id VARCHAR(1),
+    password_status_id VARCHAR(1),
+    PRIMARY KEY (emp_id),
+    FOREIGN KEY (emp_role_id) REFERENCES emp_role(emp_role_id),
+    FOREIGN KEY (emp_status_id) REFERENCES emp_status(emp_status_id),
+    FOREIGN KEY (password_status_id) REFERENCES password_status(password_status_id)
+);
+
+CREATE TABLE table_no (
+    table_number INT NOT NULL,
+    table_status_id VARCHAR(1),
+    PRIMARY KEY (table_number),
+    FOREIGN KEY (table_status_id) REFERENCES table_status(table_status_id)
+);
+
+CREATE TABLE ingredient (
+    ingredient_id INT NOT NULL,
+    ingredient_name VARCHAR(255),
+    status_ingredient_id VARCHAR(1),
+    PRIMARY KEY (ingredient_id),
+    FOREIGN KEY (status_ingredient_id) REFERENCES status_ingredient(status_ingredient_id)
+);
+
+CREATE TABLE food_variants (
+    food_variant_id INT NOT NULL,
+    food_id INT,
+    food_variant_price DECIMAL(10, 2),
+    img_food_url VARCHAR(255),
+    price DECIMAL(10, 2),
+    variant_id INT,
+    PRIMARY KEY (food_variant_id),
+    FOREIGN KEY (food_id) REFERENCES food_list(food_id),
+    FOREIGN KEY (variant_id) REFERENCES variants(variant_id)
+);
+
+CREATE TABLE catagory_tag_id (
+    category_tag_id INT NOT NULL,
+    catagory_bg_id INT,
+    bg_id INT,
+    bgp_id INT,
+    PRIMARY KEY (category_tag_id),
+    FOREIGN KEY (catagory_bg_id) REFERENCES catagory_board_game(catagory_bg_id),
+    FOREIGN KEY (bg_id) REFERENCES board_game_sale(bg_id),
+    FOREIGN KEY (bgp_id) REFERENCES board_game_play(bgp_id)
+);
+
+CREATE TABLE `order` (
+    order_id INT NOT NULL,
+    table_number INT,
+    date_time DATETIME,
+    order_status_id VARCHAR(1),
+    total_price DECIMAL(10, 2),
+    emp_id INT,
+    PRIMARY KEY (order_id),
+    FOREIGN KEY (table_number) REFERENCES table_no(table_number),
+    FOREIGN KEY (order_status_id) REFERENCES order_status(order_status_id),
+    FOREIGN KEY (emp_id) REFERENCES employee(emp_id)
+);
+
+CREATE TABLE advice_list (
+    advice_id INT NOT NULL,
+    tablenumber INT,
+    status_advice_id VARCHAR(1),
+    date_time DATETIME,
+    PRIMARY KEY (advice_id),
+    FOREIGN KEY (tablenumber) REFERENCES table_no(table_number),
+    FOREIGN KEY (status_advice_id) REFERENCES status_advice(status_advice_id)
+);
+
+CREATE TABLE borrow (
+    borrow_id INT NOT NULL,
+    table_number INT,
+    bgp_id INT,
+    date_time DATETIME,
+    borrow_status_id VARCHAR(1),
+    PRIMARY KEY (borrow_id),
+    FOREIGN KEY (table_number) REFERENCES table_no(table_number),
+    FOREIGN KEY (bgp_id) REFERENCES board_game_play(bgp_id),
+    FOREIGN KEY (borrow_status_id) REFERENCES borrow_status(borrow_status_id)
+);
+
+CREATE TABLE bill_game (
+    sale_bg_id INT NOT NULL,
+    emp_id INT,
+    date_time DATETIME,
+    total_price DECIMAL(10, 2),
+    PRIMARY KEY (sale_bg_id),
+    FOREIGN KEY (emp_id) REFERENCES employee(emp_id)
+);
+
+CREATE TABLE order_food (
+    order_detail_id INT NOT NULL,
+    order_id INT,
+    base_price DECIMAL(10, 2),
+    quantity INT,
+    food_variant_id INT,
+    serve_status_id VARCHAR(1),
+    PRIMARY KEY (order_detail_id),
+    FOREIGN KEY (order_id) REFERENCES `order`(order_id),
+    FOREIGN KEY (food_variant_id) REFERENCES food_variants(food_variant_id),
+    FOREIGN KEY (serve_status_id) REFERENCES order_food_status(serve_status_id)
+);
+
+CREATE TABLE food_menu_options (
+    food_variant_id INT NOT NULL,
+    options_id INT NOT NULL,
+    PRIMARY KEY (food_variant_id, options_id),
+    FOREIGN KEY (food_variant_id) REFERENCES food_variants(food_variant_id),
+    FOREIGN KEY (options_id) REFERENCES food_options(options_id)
+);
+
+CREATE TABLE order_food_options (
+    order_detail_id INT NOT NULL,
+    options_id INT NOT NULL,
+    PRIMARY KEY (order_detail_id, options_id),
+    FOREIGN KEY (order_detail_id) REFERENCES order_food(order_detail_id),
+    FOREIGN KEY (options_id) REFERENCES food_options(options_id)
+);
+
+CREATE TABLE bill_game_detail (
+    sale_bg_detail_id INT NOT NULL,
+    sale_bg_id INT,
+    bg_id INT,
+    unit_price DECIMAL(10, 2),
+    total_price DECIMAL(10, 2),
+    quantity INT,
+    PRIMARY KEY (sale_bg_detail_id),
+    FOREIGN KEY (sale_bg_id) REFERENCES bill_game(sale_bg_id),
+    FOREIGN KEY (bg_id) REFERENCES board_game_sale(bg_id)
+);
+
+-- ==========================================
+-- 1. กลุ่มตาราง Master / ตารางสถานะ
+-- ==========================================
+INSERT INTO emp_role (emp_role_id, emp_role_name, salary) VALUES  
+(1, 'ผู้จัดการ', 20000.00),
+(2, 'พนักงานขาย', 15000.00);
+
+INSERT INTO password_status (password_status_id, password_status_name) VALUES  
+('Y', 'ปกติ'),
+('N', 'สร้างรหัสใหม่');
+
+INSERT INTO emp_status (emp_status_id, emp_status_name) VALUES  
+('Y', 'ทำงานอยู่'),
+('N', 'ลาออกเเล้ว');
+
+INSERT INTO table_status (table_status_id, table_status_name) VALUES  
+('Y', 'ว่าง'),
+('N', 'ไม่ว่าง');
+
+INSERT INTO order_status (order_status_id, order_status_name) VALUES  
+('Y', 'จ่ายเเล้ว'),
+('N', 'ยังไม่จ่าย');
+
+INSERT INTO order_food_status (serve_status_id, serve_status_name) VALUES  
+('Y', 'เสริฟเเล้ว'),
+('N', 'ยังไม่เสริฟ');
+
+INSERT INTO status_advice (status_advice_id, status_advice_name) VALUES  
+('Y', 'ไปเเล้ว'),
+('N', 'ยังไม่ไป');
+
+INSERT INTO borrow_status (borrow_status_id, borrow_status_name) VALUES  
+('Y', 'คืนเเล้ว'),
+('N', 'ยังไม่คืน');
+
+INSERT INTO status_ingredient (status_ingredient_id, status_ingredient_name) VALUES  
+('O', 'หมดเเล้ว'),
+('F', 'ยังไม่หมด'),
+('L', 'เกือบหมด');
+
+INSERT INTO catagory_board_game (catagory_bg_id, catagory_bg_name) VALUES  
+(1, 'โกหก'),
+(2, 'ปาตี้'),
+(3, 'ครอบครัว');
+
+INSERT INTO board_game_play (bgp_id, bgp_name, quantity, img_game_play) VALUES  
+(101, 'Catan ', 3, 'catan_play.png'),
+(102, 'Avalon ', 5, 'avalon_play.png');
+
+INSERT INTO board_game_sale (bg_id, bg_name, quantity, price, img_game_sale) VALUES  
+(201, 'Catan ', 10, 1650.00, 'catan_sale.png'),
+(202, 'Avalon ', 15, 850.00, 'avalon_sale.png'),
+(203, 'Dixit ', 8, 1250.00, 'dixit_sale.png');
+
+INSERT INTO food_type_ (food_type_id, food_type_name) VALUES  
+(1, 'อาหาร'),
+(2, 'เครื่องดื่ม');
+
+INSERT INTO food_list (food_id, food_name, food_type_id) VALUES  
+(1, 'โกโก้', 2),  
+(2, 'ม่าม่า', 1);
+
+INSERT INTO variants (variant_id, variant_name) VALUES  
+(1, 'ร้อน'),
+(2, 'เย็น'),
+(3, 'ปั่น');
+
+INSERT INTO food_options (options_id, option_name, option_price) VALUES  
+(1, 'ไข่มุก', 5.00),
+(2, 'โอริโอ้', 5.00),
+(3, 'หวานน้อย', 0);
+
+-- ==========================================
+-- 2. กลุ่มตารางข้อมูลพนักงาน / โต๊ะ / อาหาร / แท็กเกม
+-- ==========================================
+-- [แก้ไข] แก้ emp_status_id และ password_status_id จาก '1' เป็น 'Y' ให้ตรงกับ Master
+INSERT INTO employee (emp_id, password, emp_first_name, emp_last_name, emp_role_id, age, sex, emp_status_id, password_status_id) VALUES  
+(1, '1234', 'ปรัชญา', 'โยยรัมย์', 1, 35, 'Male', 'Y', 'Y'),
+(2, '1234', 'รัชพงษ์', 'เเปลงรัตน์', 2, 28, 'Female', 'Y', 'Y');
+
+-- [แก้ไข] แก้ table_status_id จาก '1','2' เป็น 'Y','N' ให้ตรงกับ Master
+INSERT INTO table_no (table_number, table_status_id) VALUES  
+(1, 'Y'),
+(2, 'N'),
+(3, 'N'),
+(4, 'N'),
+(5, 'N');
+
+-- [แก้ไข] แก้ไข variant_id แถวสุดท้าย จาก 4 เป็น 2 (เนื่องจากตาราง variant ไม่มีเลข 4)
+INSERT INTO food_variants (food_variant_id, food_id, food_variant_price, img_food_url, price, variant_id) VALUES  
+(1, 1, 60.00, 'fries_normal.png', 79.00, 1),   
+(2, 1, 65.00, 'fries_large.png', 119.00, 2),  
+(3, 1, 70.00, 'pasta_spicy.png', 149.00, 3),  
+(4, 2, 80.00, 'coffee_less_sweet.png', 60.00, 2); 
+
+-- [แก้ไข] แก้ catagory_bg_id แถวที่สอง จาก 4 เป็น 2 (เนื่องจากตารางหมวดหมู่ไม่มีเลข 4)
+INSERT INTO catagory_tag_id (category_tag_id, catagory_bg_id, bg_id, bgp_id) VALUES  
+(1, 1, 201, 101), 
+(2, 2, 202, 102), 
+(3, 3, 203, NULL);
+
+-- ==========================================
+-- 3. กลุ่มตารางธุรกรรม (Orders, Borrow, Bill)
+-- ==========================================
+INSERT INTO `order` (order_id, table_number, date_time, order_status_id, total_price, emp_id) VALUES  
+(1, 2, '2026-07-13 12:30:00', 'Y', 248.00, 1),
+(2, 3, '2026-07-13 13:15:00', 'N', 60.00, 2);
+
+INSERT INTO advice_list (advice_id, tablenumber, status_advice_id, date_time) VALUES  
+(1, 2, 'Y', '2026-07-13 12:35:00'),
+(2, 4, 'N', '2026-07-13 14:00:00');
+
+INSERT INTO borrow (borrow_id, table_number, bgp_id, date_time, borrow_status_id) VALUES  
+(1, 2, 101, '2026-07-13 12:40:00', 'Y'),  
+(2, 3, 102, '2026-07-13 11:00:00', 'N');
+
+INSERT INTO bill_game (sale_bg_id, emp_id, date_time, total_price) VALUES  
+(1, 2, '2026-07-13 13:00:00', 2500.00);
+
+-- [แก้ไข] แก้ food_variant_id จากเลขหลักร้อย เป็น 1, 3, 4 ให้ตรงกับที่สร้างไว้ในตาราง food_variants
+INSERT INTO order_food (order_detail_id, order_id, base_price, quantity, food_variant_id, serve_status_id) VALUES  
+(1, 1, 79.00, 1, 1, 'Y'), 
+(2, 1, 149.00, 1, 3, 'Y'), 
+(3, 2, 60.00, 1, 4, 'N');
+
+-- ==========================================
+-- 4. กลุ่มตารางความสัมพันธ์ (Bridge Tables)
+-- ==========================================
+INSERT INTO food_menu_options (food_variant_id, options_id) VALUES  
+(1, 1), 
+(1, 2), 
+(1, 3);
+
+-- [แก้ไข] แก้ order_detail_id จากเดิม เป็น 1 และ 2 ให้สัมพันธ์กับตาราง order_food
+INSERT INTO order_food_options (order_detail_id, options_id) VALUES  
+(1, 1), 
+(2, 2);
+
+INSERT INTO bill_game_detail (sale_bg_detail_id, sale_bg_id, bg_id, unit_price, total_price, quantity) VALUES  
+(1, 1, 201, 1650.00, 1650.00, 1), 
+(2, 1, 202, 850.00, 850.00, 1);
