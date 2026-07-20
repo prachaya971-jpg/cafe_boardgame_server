@@ -6,7 +6,7 @@ const pool =mariadb.createPool({
     port: 3306,
     connectionLimit:5,
 
-    database: 'cafe_boradgme_004'
+    database: 'cafe_boardgame'
 });
 
 module.exports=pool;
