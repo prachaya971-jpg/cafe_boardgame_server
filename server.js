@@ -65,7 +65,7 @@ app.post("/api/authen/authen_request", async (req, res) => {
     if (result.isError) {
         response = { isError: true, data: "", errorMessage: result.errorMessage };
     } else {
-        var payload = { username: result.data[0].account_username }
+        var payload = { username: result.data[0].user_id }
         const authenToken = jwt.sign(payload);
         response = {
             isError: false,
@@ -78,16 +78,16 @@ app.post("/api/authen/authen_request", async (req, res) => {
 
 app.post("/api/authen/access_request", async (req, res) => {
 
-    const authenSignature = req.body.authen_signatrue;
+    const authenSignature = req.body.authen_signature; 
     const authenToken = req.body.authen_token;
 
-    // มองหาจุดนี้ใน server.js แล้วเติม await ลงไปข้างหน้าครับ:
+   
     var decoded = await jwt.verify(authenToken).catch(() => null);
 
     let response;
 
     if (decoded) {
-        const result = await userAccountModel.checkAccesRequest(authenSignature,authenToken);
+        const result = await userAccountModel.checkAccesRequest(authenSignature, authenToken);
         console.log(result);
 
         if (result.isError) {
@@ -95,13 +95,14 @@ app.post("/api/authen/access_request", async (req, res) => {
         } else {
             var payload = {
                 emp_id: result.data[0].emp_id,
-                emp_name: result.data[0].emp_first_name, 
+                user_id: result.data[0].user_id,
+                emp_name: result.data[0].emp_first_name,
                 emp_role_id: result.data[0].emp_role_id,
                 date: dateUtils.getCurrentDateForToken()
             };
 
             const accessToken = jwt.sign(payload);
-            response ={
+            response = {
                 isError: false,
                 data: {
                     access_token: accessToken,
@@ -110,9 +111,9 @@ app.post("/api/authen/access_request", async (req, res) => {
             }
         }
     } else {
-        response ={
-            isError: TransformStreamDefaultController,
-            data:"",
+        response = {
+            isError: true, 
+            data: "",
             errorMessage: "ข้อมูลไม่ถูกต้อง"
         };
     }
