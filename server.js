@@ -7,6 +7,7 @@ const dateUtils = require('./libs/date_utils');
 const { isErrored } = require('stream');
 const { error } = require('console');
 const cors = require('cors');
+const totalprice = require('./dashboard/dashboard.js');
 
 const app = express();
 app.use(express.json());
@@ -120,6 +121,15 @@ app.post("/api/authen/access_request", async (req, res) => {
     res.send(JSON.stringify(response));
 })
 
+
+app.get("/api/reports/revenue", checkAccessToken, async (req, res) => {
+    const period = req.query.period || 'daily';     // 'daily', 'monthly', 'yearly'
+    const category = req.query.category || 'all';   // 'all', 'food', 'boardgame'
+
+    const result = await totalprice.getRevenueSummary(period, category);
+    res.setHeader('Content-Type', 'application/json');
+    res.send(JSON.stringify(result));
+});
 app.listen(port, hostname, () => {
     console.log(`Server run is http://${hostname}:${port}/`);
 });
