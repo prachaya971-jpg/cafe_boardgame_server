@@ -7,7 +7,7 @@ const dateUtils = require('./libs/date_utils');
 const { isErrored } = require('stream');
 const { error } = require('console');
 const cors = require('cors');
-const totalprice = require('./dashboard/dashboard.js');
+const dashboard = require('./dashboard/dashboard.js');
 
 const app = express();
 app.use(express.json());
@@ -79,10 +79,10 @@ app.post("/api/authen/authen_request", async (req, res) => {
 
 app.post("/api/authen/access_request", async (req, res) => {
 
-    const authenSignature = req.body.authen_signature; 
+    const authenSignature = req.body.authen_signature;
     const authenToken = req.body.authen_token;
 
-   
+
     var decoded = await jwt.verify(authenToken).catch(() => null);
 
     let response;
@@ -113,7 +113,7 @@ app.post("/api/authen/access_request", async (req, res) => {
         }
     } else {
         response = {
-            isError: true, 
+            isError: true,
             data: "",
             errorMessage: "ข้อมูลไม่ถูกต้อง"
         };
@@ -126,10 +126,107 @@ app.get("/api/reports/revenue", checkAccessToken, async (req, res) => {
     const period = req.query.period || 'daily';     // 'daily', 'monthly', 'yearly'
     const category = req.query.category || 'all';   // 'all', 'food', 'boardgame'
 
-    const result = await totalprice.getRevenueSummary(period, category);
+    const result = await dashboard.getRevenueSummary(period, category);
     res.setHeader('Content-Type', 'application/json');
     res.send(JSON.stringify(result));
 });
+
+
+app.get("/api/reports/order-count", async (req, res) => {
+    try {
+        let authenToken = req.headers.authorization
+            ? req.headers.authorization.split(' ')[1]
+            : null;
+
+        let decoded = await jwt.verify(authenToken).catch(() => null);
+
+        if (!decoded) {
+            return res.status(401).json(
+                { isError: true, 
+                errorMessage: "Unauthorized" 
+            }
+        );
+        }
+
+        let result = await dashboard.getOrderCountSummary();
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: { total_orders: 0 },
+            errorMessage: err.message
+        });
+    }
+});
+
+app.get("/api/reports/advice-count", async (req, res) => {
+    try {
+        let authenToken = req.headers.authorization
+            ? req.headers.authorization.split(' ')[1]
+            : null;
+
+        let decoded = await jwt.verify(authenToken).catch(() => null);
+
+        if (!decoded) {
+            return res.status(401).json(
+                { 
+                    isError: true, 
+                    errorMessage: "Unauthorized" 
+                }
+            );
+        }
+
+        let result = await dashboard.getadviceCountSummary();
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: { total_advice: 0 },
+            errorMessage: err.message
+        });
+    }
+});
+
+app.get("/api/reports/borrow-count", async (req, res) => {
+    try {
+        let authenToken = req.headers.authorization
+            ? req.headers.authorization.split(' ')[1]
+            : null;
+
+        let decoded = await jwt.verify(authenToken).catch(() => null);
+
+        if (!decoded) {
+            return res.status(401).json(
+                { isError: true, 
+                    errorMessage: "Unauthorized" 
+                }
+            );
+        }
+
+        let result = await dashboard.getborrowCountSummary();
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: { total_borrows: 0 },
+            errorMessage: err.message
+        });
+    }
+});
+
+app.get("/api/reports/revenue-chart", async (req, res) => {
+    try {
+        const { period = 'daily', category = 'all' } = req.query;
+        let result = await dashboard.getRevenueChartData(period, category);
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ isError: true, 
+            data: [], 
+            errorMessage: err.message 
+        });
+    }
+});
+
 app.listen(port, hostname, () => {
     console.log(`Server run is http://${hostname}:${port}/`);
 });
