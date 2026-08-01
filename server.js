@@ -8,6 +8,7 @@ const { isErrored } = require('stream');
 const { error } = require('console');
 const cors = require('cors');
 const dashboard = require('./dashboard/dashboard.js');
+const order = require('./order/order.js');
 
 const app = express();
 app.use(express.json());
@@ -123,6 +124,8 @@ app.post("/api/authen/access_request", async (req, res) => {
 
 
 app.get("/api/reports/revenue", checkAccessToken, async (req, res) => {
+    console.log("reports/revenue");
+     console.log(req.decoded);
     const period = req.query.period || 'daily';     // 'daily', 'monthly', 'yearly'
     const category = req.query.category || 'all';   // 'all', 'food', 'boardgame'
 
@@ -132,22 +135,10 @@ app.get("/api/reports/revenue", checkAccessToken, async (req, res) => {
 });
 
 
-app.get("/api/reports/order-count", async (req, res) => {
+app.get("/api/reports/order-count",checkAccessToken, async (req, res) => {
     try {
-        let authenToken = req.headers.authorization
-            ? req.headers.authorization.split(' ')[1]
-            : null;
-
-        let decoded = await jwt.verify(authenToken).catch(() => null);
-
-        if (!decoded) {
-            return res.status(401).json(
-                { isError: true, 
-                errorMessage: "Unauthorized" 
-            }
-        );
-        }
-
+        console.log("reports/order-count");
+        console.log(req.decoded);
         let result = await dashboard.getOrderCountSummary();
         res.json(result);
     } catch (err) {
@@ -159,22 +150,11 @@ app.get("/api/reports/order-count", async (req, res) => {
     }
 });
 
-app.get("/api/reports/advice-count", async (req, res) => {
+app.get("/api/reports/advice-count", checkAccessToken, async (req, res) => {
     try {
-        let authenToken = req.headers.authorization
-            ? req.headers.authorization.split(' ')[1]
-            : null;
 
-        let decoded = await jwt.verify(authenToken).catch(() => null);
-
-        if (!decoded) {
-            return res.status(401).json(
-                { 
-                    isError: true, 
-                    errorMessage: "Unauthorized" 
-                }
-            );
-        }
+        console.log("reports/advice-count");
+        console.log(req.decoded);
 
         let result = await dashboard.getadviceCountSummary();
         res.json(result);
@@ -187,22 +167,10 @@ app.get("/api/reports/advice-count", async (req, res) => {
     }
 });
 
-app.get("/api/reports/borrow-count", async (req, res) => {
+app.get("/api/reports/borrow-count", checkAccessToken, async (req, res) => {
     try {
-        let authenToken = req.headers.authorization
-            ? req.headers.authorization.split(' ')[1]
-            : null;
-
-        let decoded = await jwt.verify(authenToken).catch(() => null);
-
-        if (!decoded) {
-            return res.status(401).json(
-                { isError: true, 
-                    errorMessage: "Unauthorized" 
-                }
-            );
-        }
-
+        console.log("reports/borrow-count");
+        console.log(req.decoded);
         let result = await dashboard.getborrowCountSummary();
         res.json(result);
     } catch (err) {
@@ -214,8 +182,10 @@ app.get("/api/reports/borrow-count", async (req, res) => {
     }
 });
 
-app.get("/api/reports/revenue-chart", async (req, res) => {
+app.get("/api/reports/revenue-chart", checkAccessToken, async (req, res) => {
     try {
+        console.log("reports/revenue-chart");
+        console.log(req.decoded);
         const { period = 'daily', category = 'all' } = req.query;
         let result = await dashboard.getRevenueChartData(period, category);
         res.json(result);
@@ -223,6 +193,60 @@ app.get("/api/reports/revenue-chart", async (req, res) => {
         res.status(500).json({ isError: true, 
             data: [], 
             errorMessage: err.message 
+        });
+    }
+});
+
+app.get("/api/order/order-list",checkAccessToken, async (req, res) => {
+    try {
+        console.log("order/order-list");
+        console.log(req.decoded);
+
+        let result = await order.getorderlist();
+        
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: [],
+            errorMessage: err.message
+        });
+    }
+});
+
+app.get("/api/order/quantity/:tableNumber",checkAccessToken, async (req, res) => {
+    try {
+        console.log("order/order-list");
+        console.log(req.decoded);
+        const tableNumber = req.params.tableNumber;
+
+    
+        let result = await order.getorderlistbyid(tableNumber);
+        
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: [],
+            errorMessage: err.message
+        });
+    }
+});
+
+app.get("/api/dashboard/topproducts", async (req, res) => {
+    try {
+        //console.log("order/order-list");
+        //console.log(req.decoded);
+        const { period, category, limit } = req.query;
+
+        let result = await dashboard.gettopproducts(period, category, limit);
+
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: [],
+            errorMessage: err.message
         });
     }
 });
