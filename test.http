@@ -14,7 +14,7 @@ Content-Type: application/json
 
 }
 ###
-GET http://localhost:3000/api/dashboard/topproducts?period=monthly&category=borrow&limit=10
+GET http://localhost:3000/api/dashboard/topproducts?period=yearly&category=food&limit=10
 
 {
 
