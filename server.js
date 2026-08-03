@@ -11,8 +11,11 @@ const dashboard = require('./dashboard/dashboard.js');
 const order = require('./order/order.js');
 
 const app = express();
-app.use(express.json());
+const path = require('path');
 app.use(cors());
+app.use('/img', express.static(path.join(__dirname, 'img')));
+app.use(express.json());
+
 app.use(bp.urlencoded({ extended: true }));
 app.use(bp.json());
 const hostname = '127.0.0.1';
@@ -41,6 +44,7 @@ const checkAccessToken = (req, res, next) => {
             });
         });
 }
+
 
 app.get("/api/users", (req, res) => {
     var response = {
