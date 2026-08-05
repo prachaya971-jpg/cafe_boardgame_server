@@ -39,14 +39,14 @@ module.exports = {
             conn = await pool.getConnection();
 
             var sql = "SELECT user_id FROM employee WHERE "
-        + "SHA2(CONCAT(user_id, '&', ?), 256) = ?";
+        + "SHA2(CONCAT(user_id, '&', ?), 256) = ? AND emp_status_id = 'Y'";
 
             var rows = await conn.query(sql, [dateUtils.getCurrentDateForToken(), authenRequest]);
 
             if (rows.length == 0) {
                 result = {
                     isError: true,
-                    errorMassage: "ไม่พบข้อมูลผู้ใช้ในระบบ"
+                    errorMassage: "ไม่พบข้อมูลผู้ใช้ในระบบ หรือบัญชีถูกระงับการใช้งาน"
                 };
             } else {
                 result = {
@@ -72,8 +72,11 @@ module.exports = {
         try {
             conn = await pool.getConnection();
 
-            var sql = "SELECT * FROM employee WHERE "
-                + "LOWER(SHA2(CONCAT(TRIM(user_id), '&', TRIM(password), '&', ?), 256)) = ?";
+            var sql =  `
+                    SELECT emp_id, user_id, emp_first_name, emp_last_name, tel, emp_role_id, age, sex
+                    FROM employee 
+                    WHERE LOWER(SHA2(CONCAT(TRIM(user_id), '&', TRIM(password), '&', ?), 256)) = ? 
+                        `;
 
             var rows = await conn.query(sql, [authenToken, authenSignature]);
 

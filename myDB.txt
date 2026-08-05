@@ -386,7 +386,7 @@ INSERT INTO bill_game_detail (sale_bg_detail_id, sale_bg_id, bg_id, unit_price, 
 (2, 1, 202, 850.00, 850.00, 1);
 
 ALTER TABLE  employee ADD user_id CHAR(10) AFTER emp_id;
-UPDATE employee ;
+
 
 UPDATE `employee` SET `user_id`='6810210551' WHERE  `emp_id`=1;
 UPDATE `employee` SET `user_id`='6810210610' WHERE  `emp_id`=1;
@@ -399,3 +399,12 @@ ADD FOREIGN KEY (pay_status_id) REFERENCES order_status(order_status_id);
 UPDATE `order_food` SET `pay_status_id`='Y' WHERE  `order_detail_id`=3;
 UPDATE `order_food` SET `pay_status_id`='Y' WHERE  `order_detail_id`=2;
 UPDATE `order_food` SET `pay_status_id`='Y' WHERE  `order_detail_id`=1;
+
+ALTER TABLE `employee`
+	ADD COLUMN `tel` INT(10) NULL DEFAULT NULL AFTER `sex`;
+
+    ALTER TABLE `employee`
+	CHANGE COLUMN `tel` `tel` VARCHAR(10) NULL DEFAULT NULL AFTER `sex`;
+
+ALTER TABLE `variants`
+ADD COLUMN `variant_img` VARCHAR(255) NULL DEFAULT NULL AFTER `variant_name`;

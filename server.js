@@ -8,7 +8,11 @@ const { isErrored } = require('stream');
 const { error } = require('console');
 const cors = require('cors');
 const dashboard = require('./dashboard/dashboard.js');
+const advice = require('./advice/advice.js');
 const order = require('./order/order.js');
+const create = require('./create/create.js');
+const variantModel = require('./report/report_varians.js');
+const multer = require('multer');
 
 const app = express();
 const path = require('path');
@@ -44,6 +48,17 @@ const checkAccessToken = (req, res, next) => {
             });
         });
 }
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, path.join(__dirname, 'img/variants')); 
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const ext = path.extname(file.originalname);
+        cb(null, uniqueSuffix + ext);
+    }
+});
+const upload = multer({ storage: storage });
 
 
 app.get("/api/users", (req, res) => {
@@ -201,12 +216,12 @@ app.get("/api/reports/revenue-chart", checkAccessToken, async (req, res) => {
     }
 });
 
-app.get("/api/order/order-list",checkAccessToken, async (req, res) => {
+app.get("/api/advice/advice-list",checkAccessToken, async (req, res) => {
     try {
-        console.log("order/order-list");
+        console.log("order/advice-list");
         console.log(req.decoded);
 
-        let result = await order.getorderlist();
+        let result = await advice.getadviceList();
         
         res.json(result);
     } catch (err) {
@@ -218,29 +233,12 @@ app.get("/api/order/order-list",checkAccessToken, async (req, res) => {
     }
 });
 
-app.get("/api/order/quantity/:tableNumber",checkAccessToken, async (req, res) => {
+
+
+app.get("/api/dashboard/topproducts", checkAccessToken, async (req, res) => {
     try {
-        console.log("order/order-list");
+        console.log("dashboard/topproducts");
         console.log(req.decoded);
-        const tableNumber = req.params.tableNumber;
-
-    
-        let result = await order.getorderlistbyid(tableNumber);
-        
-        res.json(result);
-    } catch (err) {
-        res.status(500).json({
-            isError: true,
-            data: [],
-            errorMessage: err.message
-        });
-    }
-});
-
-app.get("/api/dashboard/topproducts", async (req, res) => {
-    try {
-        //console.log("order/order-list");
-        //console.log(req.decoded);
         const { period, category, limit } = req.query;
 
         let result = await dashboard.gettopproducts(period, category, limit);
@@ -254,6 +252,108 @@ app.get("/api/dashboard/topproducts", async (req, res) => {
         });
     }
 });
+
+app.post("/api/food/create-variant", checkAccessToken, async (req, res) => {
+    try {
+        console.log("food/create-variant");
+        console.log(req.decoded);
+        
+           const variant_name = req.body.variant_name
+        
+
+        
+        let result = await create.createVariant({ variant_name });
+
+        if (result.isError) {
+            return res.status(400).json(result);
+        }
+
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: [],
+            errorMessage: err.message
+        });
+    }
+});
+
+app.get("/api/food/variants", async (req, res) => {
+    try {
+        let result = await variantModel.getvarians();
+
+        if (result.isError) {
+            return res.status(400).json(result);
+        }
+
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: [],
+            errorMessage: err.message
+        });
+    }
+});
+
+app.post("/api/food/update-variant", async (req, res) => {
+    try {
+        const { variant_id, variant_name } = req.body;
+        let result = await variantModel.updateVariant({ variant_id, variant_name });
+
+        if (result.isError) {
+            return res.status(400).json(result);
+        }
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: null,
+            errorMessage: err.message
+        });
+    }
+});
+
+app.post("/api/food/delete-variant", async (req, res) => {
+    try {
+        const { variant_id } = req.body;
+        let result = await variantModel.deleteVariant(variant_id);
+
+        if (result.isError) {
+            return res.status(400).json(result);
+        }
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: null,
+            errorMessage: err.message
+        });
+    }
+});
+
+app.get("/api/order/order-list", async (req, res) => {
+    try {
+        //console.log("order/order-list");
+        //console.log(req.decoded);
+        
+
+        let result = await order.getorderList();
+
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: [],
+            errorMessage: err.message
+        });
+    }
+});
+
+
+
+
+
 
 app.listen(port, hostname, () => {
     console.log(`Server run is http://${hostname}:${port}/`);
