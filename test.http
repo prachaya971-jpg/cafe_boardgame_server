@@ -19,3 +19,10 @@ GET http://localhost:3000/api/dashboard/topproducts?period=yearly&category=food&
 {
 
 }
+###
+GET http://localhost:3000/api/reports/borrow-report
+Content-Type: application/json
+
+{
+
+}

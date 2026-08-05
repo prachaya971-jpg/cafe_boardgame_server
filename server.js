@@ -9,11 +9,14 @@ const { error } = require('console');
 const cors = require('cors');
 const dashboard = require('./dashboard/dashboard.js');
 const order = require('./order/order.js');
+const test = require('./test/test.js');
+const borrow = require('./borrow/borrow.js')
 
 const app = express();
 const path = require('path');
 app.use(cors());
 app.use('/img', express.static(path.join(__dirname, 'img')));
+app.use('/img/boardgame', express.static(path.join(__dirname, 'img')));
 app.use(express.json());
 
 app.use(bp.urlencoded({ extended: true }));
@@ -257,4 +260,21 @@ app.get("/api/dashboard/topproducts", async (req, res) => {
 
 app.listen(port, hostname, () => {
     console.log(`Server run is http://${hostname}:${port}/`);
+});
+
+// รายงานการยืมบอร์ดเกม
+app.get("/api/reports/borrow-report", async (req, res) => {
+    try {
+        const { period, limit } = req.query;
+
+        let result = await borrow.getBorrowReportList(period, limit); 
+        
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: [],
+            errorMessage: err.message
+        });
+    }
 });
