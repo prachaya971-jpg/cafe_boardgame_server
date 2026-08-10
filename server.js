@@ -10,14 +10,11 @@ const cors = require('cors');
 const dashboard = require('./dashboard/dashboard.js');
 const advice = require('./advice/advice.js');
 const order = require('./order/order.js');
-<<<<<<< HEAD
 const test = require('./test/test.js');
 const borrow = require('./borrow/borrow.js')
-=======
 const create = require('./create/create.js');
 const variantModel = require('./report/report_varians.js');
 const multer = require('multer');
->>>>>>> origin/main
 
 const app = express();
 const path = require('path');

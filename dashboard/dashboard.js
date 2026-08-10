@@ -274,34 +274,34 @@ module.exports = {
         }
     },
 
-    
-   gettopproducts: async (period, category, limit) => {
-    let conn;
-    let result;
-    try {
-        conn = await pool.getConnection();
 
-        // 1. เงื่อนไขช่วงเวลา
-        let orderDateCond = "DATE(o.date_time) = CURDATE()";
-        let billDateCond = "DATE(bg.date_time) = CURDATE()";
-        let borrowDateCond = "DATE(bw.date_time) = CURDATE()";
+    gettopproducts: async (period, category, limit) => {
+        let conn;
+        let result;
+        try {
+            conn = await pool.getConnection();
 
-        if (period === 'monthly') {
-            orderDateCond = "YEAR(o.date_time) = YEAR(CURDATE()) AND MONTH(o.date_time) = MONTH(CURDATE())";
-            billDateCond = "YEAR(bg.date_time) = YEAR(CURDATE()) AND MONTH(bg.date_time) = MONTH(CURDATE())";
-            borrowDateCond = "YEAR(bw.date_time) = YEAR(CURDATE()) AND MONTH(bw.date_time) = MONTH(CURDATE())";
-        } else if (period === 'yearly') {
-            orderDateCond = "YEAR(o.date_time) = YEAR(CURDATE())";
-            billDateCond = "YEAR(bg.date_time) = YEAR(CURDATE())";
-            borrowDateCond = "YEAR(bw.date_time) = YEAR(CURDATE())";
-        }
+            // 1. เงื่อนไขช่วงเวลา
+            let orderDateCond = "DATE(o.date_time) = CURDATE()";
+            let billDateCond = "DATE(bg.date_time) = CURDATE()";
+            let borrowDateCond = "DATE(bw.date_time) = CURDATE()";
 
-        let sql = "";
-        const limitValue = Number(limit) || 5;
+            if (period === 'monthly') {
+                orderDateCond = "YEAR(o.date_time) = YEAR(CURDATE()) AND MONTH(o.date_time) = MONTH(CURDATE())";
+                billDateCond = "YEAR(bg.date_time) = YEAR(CURDATE()) AND MONTH(bg.date_time) = MONTH(CURDATE())";
+                borrowDateCond = "YEAR(bw.date_time) = YEAR(CURDATE()) AND MONTH(bw.date_time) = MONTH(CURDATE())";
+            } else if (period === 'yearly') {
+                orderDateCond = "YEAR(o.date_time) = YEAR(CURDATE())";
+                billDateCond = "YEAR(bg.date_time) = YEAR(CURDATE())";
+                borrowDateCond = "YEAR(bw.date_time) = YEAR(CURDATE())";
+            }
 
-        // 2. แยก Query ตาม Category
-        if (category === 'food') {
-            sql = `
+            let sql = "";
+            const limitValue = Number(limit) || 5;
+
+            // 2. แยก Query ตาม Category
+            if (category === 'food') {
+                sql = `
                 SELECT 
                     CONCAT(f.food_name, IFNULL(CONCAT(' (', v.variant_name, ')'), '')) AS product_name,
                     fv.img_food_url AS image,
@@ -319,8 +319,8 @@ module.exports = {
                 ORDER BY total_quantity DESC
                 LIMIT ${limitValue}
             `;
-        } else if (category === 'boardgame') {
-            sql = `
+            } else if (category === 'boardgame') {
+                sql = `
                 SELECT 
                     bgs.bg_name AS product_name,
                     bgs.img_game_sale AS image,
@@ -335,8 +335,8 @@ module.exports = {
                 ORDER BY total_quantity DESC
                 LIMIT ${limitValue}
             `;
-        } else if (category === 'borrow') {
-            sql = `
+            } else if (category === 'borrow') {
+                sql = `
                 SELECT 
                     bgp.bgp_name AS product_name,
                     bgp.img_game_play AS image,
@@ -350,32 +350,32 @@ module.exports = {
                 ORDER BY total_quantity DESC
                 LIMIT ${limitValue}
             `;
+            }
+
+            const rows = await conn.query(sql);
+
+            const formattedData = rows.map(item => ({
+                product_name: item.product_name,
+                image: item.image || '',
+                category: item.category,
+                total_quantity: Number(item.total_quantity || 0),
+                total_revenue: Number(item.total_revenue || 0)
+            }));
+
+            result = {
+                isError: false,
+                data: formattedData,
+                errorMessage: ""
+            };
+        } catch (error) {
+            result = {
+                isError: true,
+                data: [],
+                errorMessage: error.message
+            };
+        } finally {
+            if (conn) conn.release();
+            return result;
         }
-
-        const rows = await conn.query(sql);
-
-        const formattedData = rows.map(item => ({
-            product_name: item.product_name,
-            image: item.image || '',
-            category: item.category,
-            total_quantity: Number(item.total_quantity || 0),
-            total_revenue: Number(item.total_revenue || 0)
-        }));
-
-        result = {
-            isError: false,
-            data: formattedData,
-            errorMessage: ""
-        };
-    } catch (error) {
-        result = {
-            isError: true,
-            data: [],
-            errorMessage: error.message
-        };
-    } finally {
-        if (conn) conn.release();
-        return result;
-    }
-},
+    },
 }

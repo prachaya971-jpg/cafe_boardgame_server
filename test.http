@@ -20,11 +20,12 @@ GET http://localhost:3000/api/dashboard/topproducts?period=yearly&category=food&
 
 }
 ###
-<<<<<<< HEAD
-GET http://localhost:3000/api/reports/borrow-report
-=======
+GET http://localhost:3000/api/reports/borrow-
+{
+
+}
+###
 GET http://localhost:3000/api/order/order-list HTTP/1.1
->>>>>>> origin/main
 Content-Type: application/json
 
 {
