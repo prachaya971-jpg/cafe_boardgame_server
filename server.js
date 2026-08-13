@@ -84,8 +84,10 @@ app.get("/api/users/:accountId", async (req, res) => {
 });
 
 app.post("/api/authen/authen_request", async (req, res) => {
+    console.log(req.body.authen_request)
     const authenRequest = req.body.authen_request;
     const result = await userAccountModel.CheckAuthenRequest(authenRequest);
+    console.log(result);
 
     let response;
 
@@ -149,6 +151,8 @@ app.post("/api/authen/access_request", async (req, res) => {
 
 //dashboard
 app.get("/api/reports/revenue", checkAccessToken, async (req, res) => {
+    console.log("reports/revenue");
+     console.log(req.decoded);
     const period = req.query.period || 'daily';     // 'daily', 'monthly', 'yearly'
     const category = req.query.category || 'all';   // 'all', 'food', 'boardgame'
 
@@ -160,7 +164,8 @@ app.get("/api/reports/revenue", checkAccessToken, async (req, res) => {
 
 app.get("/api/reports/order-count",checkAccessToken, async (req, res) => {
     try {
-
+        console.log("reports/order-count");
+        console.log(req.decoded);
         let result = await dashboard.getOrderCountSummary();
         res.json(result);
     } catch (err) {
@@ -175,6 +180,9 @@ app.get("/api/reports/order-count",checkAccessToken, async (req, res) => {
 app.get("/api/reports/advice-count", checkAccessToken, async (req, res) => {
     try {
 
+        console.log("reports/advice-count");
+        console.log(req.decoded);
+
         let result = await dashboard.getadviceCountSummary();
         res.json(result);
     } catch (err) {
@@ -188,7 +196,8 @@ app.get("/api/reports/advice-count", checkAccessToken, async (req, res) => {
 
 app.get("/api/reports/borrow-count", checkAccessToken, async (req, res) => {
     try {
-
+        console.log("reports/borrow-count");
+        console.log(req.decoded);
         let result = await dashboard.getborrowCountSummary();
         res.json(result);
     } catch (err) {
@@ -202,7 +211,8 @@ app.get("/api/reports/borrow-count", checkAccessToken, async (req, res) => {
 
 app.get("/api/reports/revenue-chart", checkAccessToken, async (req, res) => {
     try {
-
+        console.log("reports/revenue-chart");
+        console.log(req.decoded);
         const { period = 'daily', category = 'all' } = req.query;
         let result = await dashboard.getRevenueChartData(period, category);
         res.json(result);
@@ -219,7 +229,8 @@ app.get("/api/reports/revenue-chart", checkAccessToken, async (req, res) => {
 
 app.get("/api/dashboard/topproducts", checkAccessToken, async (req, res) => {
     try {
-
+        console.log("dashboard/topproducts");
+        console.log(req.decoded);
         const { period, category, limit } = req.query;
 
         let result = await dashboard.gettopproducts(period, category, limit);
@@ -237,6 +248,8 @@ app.get("/api/dashboard/topproducts", checkAccessToken, async (req, res) => {
 //variant
 app.post("/api/food/create-variant", checkAccessToken, async (req, res) => {
     try {
+        console.log("food/create-variant");
+        console.log(req.decoded);
         
            const variant_name = req.body.variant_name
         
@@ -260,6 +273,9 @@ app.post("/api/food/create-variant", checkAccessToken, async (req, res) => {
 
 app.get("/api/food/variants", checkAccessToken, async (req, res) => {
     try {
+
+        console.log("food/variants");
+        console.log(req.decoded);
         
         let result = await variantModel.getvarians();
 
@@ -279,7 +295,8 @@ app.get("/api/food/variants", checkAccessToken, async (req, res) => {
 
 app.post("/api/food/update-variant",checkAccessToken, async (req, res) => {
     try {
-
+        console.log("food/update-variant");
+        console.log(req.decoded);
         const { variant_id, variant_name } = req.body;
         let result = await variantModel.updateVariant({ variant_id, variant_name });
 
@@ -298,7 +315,8 @@ app.post("/api/food/update-variant",checkAccessToken, async (req, res) => {
 
 app.post("/api/food/delete-variant",checkAccessToken, async (req, res) => {
     try {
-
+        console.log("food/delete-variant");
+        console.log(req.decoded);
         const { variant_id } = req.body;
         let result = await variantModel.deleteVariant(variant_id);
 
@@ -318,6 +336,8 @@ app.post("/api/food/delete-variant",checkAccessToken, async (req, res) => {
 //option
 app.post("/api/food/create-option", uploadptions.single('options_img'), checkAccessToken, async (req, res) => {
     try {
+        console.log("food/create-option");
+        console.log(req.decoded);
 
         const option_name = req.body.option_name;
         const option_price = req.body.option_price;
@@ -342,6 +362,9 @@ app.post("/api/food/create-option", uploadptions.single('options_img'), checkAcc
 
 app.get("/api/food/options", checkAccessToken, async (req, res) => {
     try {
+
+        console.log("food/options");
+        console.log(req.decoded);
         
         let result = await optionModel.getoption();
 
@@ -361,6 +384,8 @@ app.get("/api/food/options", checkAccessToken, async (req, res) => {
 
 app.post("/api/food/update-option", checkAccessToken, uploadptions.single('options_img'), async (req, res) => {
     try {
+        console.log("food/update-option");
+        console.log(req.decoded);
 
         const { options_id, option_name, option_price } = req.body;
         const options_img = req.file ? req.file.filename : null;
@@ -389,6 +414,8 @@ app.post("/api/food/update-option", checkAccessToken, uploadptions.single('optio
 
 app.post("/api/food/delete-option",checkAccessToken, async (req, res) => {
     try {
+        console.log("food/delete-option");
+        console.log(req.decoded);
         const { option_id } = req.body;
         let result = await optionModel.deleteOption(option_id);
 
@@ -405,8 +432,11 @@ app.post("/api/food/delete-option",checkAccessToken, async (req, res) => {
     }
 });
 
+//type
 app.post("/api/food/create-type", checkAccessToken, async (req, res) => {
     try {
+        console.log("food/create-type");
+        console.log(req.decoded);
         
            const type_name = req.body.type_name
         
@@ -430,6 +460,9 @@ app.post("/api/food/create-type", checkAccessToken, async (req, res) => {
 
 app.get("/api/food/types", checkAccessToken, async (req, res) => {
     try {
+
+        console.log("food/types");
+        console.log(req.decoded);
         
         let result = await typeModel.getType();
 
@@ -449,6 +482,8 @@ app.get("/api/food/types", checkAccessToken, async (req, res) => {
 
 app.post("/api/food/update-type",checkAccessToken, async (req, res) => {
     try {
+        console.log("food/update-type");
+        console.log(req.decoded);
         const { food_type_id, food_type_name } = req.body;
         let result = await typeModel.updateType({ food_type_id, food_type_name });
 
@@ -467,6 +502,8 @@ app.post("/api/food/update-type",checkAccessToken, async (req, res) => {
 
 app.post("/api/food/delete-type",checkAccessToken, async (req, res) => {
     try {
+        console.log("food/delete-type");
+        console.log(req.decoded);
         const { food_type_id } = req.body;
         let result = await typeModel.deleteType(food_type_id);
 
@@ -488,6 +525,9 @@ app.post("/api/food/delete-type",checkAccessToken, async (req, res) => {
 //ยังไม่เสร็จ
 app.get("/api/order/order-list", async (req, res) => {
     try {
+        console.log("order/order-list");
+        console.log(req.decoded);
+        
 
         let result = await order.getorderList();
 
@@ -523,6 +563,8 @@ app.post("/api/order/update-order-server", async (req, res) => {
 
 app.get("/api/advice/advice-list", async (req, res) => {
     try {
+        console.log("order/advice-list");
+        console.log(req.decoded);
 
         let result = await advice.getadviceList();
         
@@ -601,6 +643,9 @@ app.post("/api/boardgame/create-type", checkAccessToken, async (req, res) => {
 //แสดงประเภทบอร์ดเกม
 app.get("/api/boardgame/report-type", checkAccessToken, async (req, res) => {
     try {
+
+        console.log("boardgame/report-type");
+        console.log(req.decoded);
         
         let result = await editboardgametype.getType();
 
@@ -640,6 +685,8 @@ app.post("/api/boardgame/update-type",checkAccessToken, async (req, res) => {
 //ลบประเภทบอร์ดเกม
 app.post("/api/boardgame/delete-type",checkAccessToken, async (req, res) => {
     try {
+        console.log("boardgame/delete-type");
+        console.log(req.decoded);
         const { boardgame_type_id } = req.body;
         let result = await editboardgametype.deleteType(boardgame_type_id);
 
@@ -655,3 +702,4 @@ app.post("/api/boardgame/delete-type",checkAccessToken, async (req, res) => {
         });
     }
 });
+
