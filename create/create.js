@@ -36,40 +36,68 @@ module.exports = {
     }
 },
 
-    createFood: async (foodData) => {
-        let conn;
-        let result;
-        try {
-            conn = await pool.getConnection();
 
-            var sqlfood = "INSERT INTO food_list (food_name, food_type_id) VALUES (?, ?)";
+createOption: async (optionData) => {
+    let conn;
+    let result;
+    try {
+        conn = await pool.getConnection();
+        
+        const { option_name,options_img, option_price } = optionData;
 
-            const [foodlist] = await conn.query(sqlfood, [food_name, food_type_id]);
+        var sqloption = "INSERT INTO food_options (option_name, options_img, option_price) VALUES (?, ?, ?)";
+        
+        await conn.query(sqloption, [option_name, options_img, option_price]);
 
+        result = {
+            isError: false,
+            data: null,
+            errorMessage: ""
+        };
 
+    } catch (error) {
+        result = {
+            isError: true,
+            data: null,
+            errorMessage: error.message
+        };
+    } finally {
 
-
-            result = {
-                isError: false,
-                data: { foodlist },
-                errorMessage: "เพิ่มรายการอาหารสำเร็จ"
-            };
-
-        } catch (error) {
-            // หากเกิดข้อผิดพลาดให้ Rollback ข้อมูลทั้งหมด
-            if (conn) await conn.rollback();
-
-            result = {
-                isError: true,
-                data: null,
-                errorMessage: error.message
-            };
-        } finally {
-            if (conn) conn.release();
-            return result;
-        }
-
+        if (conn) conn.release();
+        return result;
     }
+},
+createType: async (typeData) => {
+    let conn;
+    let result;
+    try {
+        conn = await pool.getConnection();
+        
+        const { type_name } = typeData;
+
+        var sqltype = "INSERT INTO food_type_ (food_type_name) VALUES (?)";
+        
+        await conn.query(sqltype, [type_name]);
+
+        result = {
+            isError: false,
+            data: null,
+            errorMessage: ""
+        };
+
+    } catch (error) {
+        result = {
+            isError: true,
+            data: null,
+            errorMessage: error.message
+        };
+    } finally {
+
+        if (conn) conn.release();
+        return result;
+    }
+},
+    
 
 
 }

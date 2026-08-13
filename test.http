@@ -31,3 +31,31 @@ Content-Type: application/json
 {
 
 }
+###
+POST http://localhost:3000/api/order/update-order-server HTTP/1.1
+Content-Type: application/json
+
+{
+    "orderDetailId": 1
+}
+###
+GET http://localhost:3000/api/advice/advice-list HTTP/1.1
+Content-Type: application/json
+
+{
+
+}
+###
+POST http://localhost:3000/api/advice/update-advice HTTP/1.1
+Content-Type: application/json
+
+{
+    "adviceId": 1
+}
+
+###
+GET http://localhost:3000/api/reports/borrow-report?period=all HTTP/1.1
+Content-Type: application/json
+{
+
+}

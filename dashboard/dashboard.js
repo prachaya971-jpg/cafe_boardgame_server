@@ -82,7 +82,7 @@ module.exports = {
             const sql = `SELECT COUNT(of.order_detail_id) AS total_orders
                      FROM \`order_food\` of
                      JOIN \`order\` o ON of.order_id = o.order_id
-                     WHERE of.serve_status_id = 'N' AND DATE(o.date_time) = CURDATE() AND o.order_status_id = 'N'`;
+                     WHERE of.serve_status_id = 'N' AND DATE(of.date_time) = CURDATE() AND o.order_status_id = 'N'`;
 
             const rows = await conn.query(sql);
 

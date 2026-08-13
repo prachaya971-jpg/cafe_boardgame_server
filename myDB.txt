@@ -406,5 +406,56 @@ ALTER TABLE `employee`
     ALTER TABLE `employee`
 	CHANGE COLUMN `tel` `tel` VARCHAR(10) NULL DEFAULT NULL AFTER `sex`;
 
-ALTER TABLE `variants`
-ADD COLUMN `variant_img` VARCHAR(255) NULL DEFAULT NULL AFTER `variant_name`;
+ALTER TABLE `food_options`
+ADD COLUMN `options_img` VARCHAR(255) NULL DEFAULT NULL AFTER `options_id`;
+
+ALTER TABLE variants
+    CHANGE COLUMN variant_id variant_id INT(11) NOT NULL AUTO_INCREMENT FIRST;
+
+    ALTER TABLE `order_food` ADD COLUMN `date_time` DATETIME NULL DEFAULT NULL AFTER `base_price`;
+
+ALTER TABLE food_options
+    CHANGE COLUMN options_id options_id INT(11) NOT NULL AUTO_INCREMENT FIRST;
+
+
+ALTER TABLE `food_type_`
+	CHANGE COLUMN `food_type_id` `food_type_id` INT(11) NOT NULL AUTO_INCREMENT FIRST;
+
+
+CREATE ALGORITHM = UNDEFINED SQL SECURITY DEFINER VIEW v_order_detail AS  SELECT 
+                of.order_detail_id,
+                fv.img_food_url AS image,
+                o.table_number,
+                fl.food_name,
+                v.variant_name,
+                GROUP_CONCAT(fo.option_name SEPARATOR ',') AS option_name,
+                of.quantity,
+                of.base_price,
+                ofs.serve_status_name,
+                IFNULL(SUM(fo.option_price), 0) AS option_price,
+    				((of.base_price + IFNULL(SUM(fo.option_price), 0)) * of.quantity) AS total_price
+            FROM `order o`
+            JOIN order_food of ON o.order_id = of.order_id
+            JOIN food_variants fv ON of.food_variant_id = fv.food_variant_id
+            JOIN food_list fl ON fv.food_id = fl.food_id
+            JOIN food_type_ ft ON fl.food_type_id = ft.food_type_id
+            LEFT JOIN variants v ON fv.variant_id = v.variant_id
+            LEFT JOIN order_food_status ofs ON of.serve_status_id = ofs.serve_status_id
+            LEFT JOIN order_food_options ofo ON of.order_detail_id = ofo.order_detail_id
+            LEFT JOIN food_options fo ON ofo.options_id = fo.options_id
+            WHERE DATE(of.date_time) = CURDATE() AND of.serve_status_id = 'N'
+            GROUP BY of.order_detail_id
+            ORDER BY of.date_time ASC ;
+
+ALTER TABLE `order_food`
+	CHANGE COLUMN `order_detail_id` `order_detail_id` INT(11) NOT NULL AUTO_INCREMENT FIRST;
+
+CREATE ALGORITHM = UNDEFINED SQL SECURITY DEFINER VIEW v_advice_list AS  SELECT 
+a.advice_id, 
+    a.tablenumber,
+    sa.status_advice_name
+FROM advice_list a
+JOIN table_no t ON a.tablenumber = t.table_number
+JOIN status_advice sa ON a.status_advice_id= sa.status_advice_id
+WHERE DATE(a.date_time) = CURDATE() AND a.status_advice_id = 'N'
+ORDER BY a.date_time ASC ;
