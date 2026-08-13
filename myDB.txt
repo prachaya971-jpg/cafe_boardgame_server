@@ -459,3 +459,119 @@ JOIN table_no t ON a.tablenumber = t.table_number
 JOIN status_advice sa ON a.status_advice_id= sa.status_advice_id
 WHERE DATE(a.date_time) = CURDATE() AND a.status_advice_id = 'N'
 ORDER BY a.date_time ASC ;
+
+ALTER TABLE `advice_list`
+	CHANGE COLUMN `advice_id` `advice_id` INT(11) NOT NULL AUTO_INCREMENT FIRST;
+
+    ALTER TABLE `employee`
+	CHANGE COLUMN `emp_id` `emp_id` INT(11) NOT NULL AUTO_INCREMENT FIRST;
+
+    ALTER TABLE `emp_role`
+	CHANGE COLUMN `emp_role_id` `emp_role_id` INT(11) NOT NULL AUTO_INCREMENT FIRST;
+
+    ALTER TABLE `catagory_tag_id`
+	DROP COLUMN `bgp_id`,
+	DROP FOREIGN KEY `3`;
+
+
+    CREATE TABLE `play_catagory_tag_id` (
+	`catagory_tag_id` INT(11) NULL,
+	`catagory_bg_id` INT(11) NULL,
+	`bgp_id` INT(11) NULL,
+	CONSTRAINT `FK_play_catagory_tag_id_catagory_board_game` FOREIGN KEY (`catagory_bg_id`) REFERENCES `catagory_board_game` (`catagory_bg_id`) ON UPDATE NO ACTION ON DELETE NO ACTION,
+	CONSTRAINT `FK_play_catagory_tag_id_board_game_play` FOREIGN KEY (`bgp_id`) REFERENCES `board_game_play` (`bgp_id`) ON UPDATE NO ACTION ON DELETE NO ACTION
+)
+COLLATE='utf8mb3_thai_520_w2'
+;
+
+ALTER TABLE `play_catagory_tag_id`
+ADD PRIMARY KEY (`catagory_tag_id`);
+
+CREATE ALGORITHM = UNDEFINED SQL SECURITY DEFINER VIEW v_sale_report AS
+SELECT 
+    o.order_id,
+    o.date_time,
+    t.table_number,
+    o.total_price,
+    os.order_status_name,
+    CONCAT(e.emp_first_name, ' ', e.emp_last_name) AS emp_name,
+    COUNT(ff.order_detail_id) AS total_items
+FROM `order` o
+JOIN table_no t ON t.table_number = o.table_number
+JOIN order_status os ON os.order_status_id = o.order_status_id
+JOIN employee e ON e.emp_id = o.emp_id
+LEFT JOIN order_food ff ON ff.order_id = o.order_id
+WHERE o.order_status_id = 'Y'
+GROUP BY 
+    o.order_id,
+    o.date_time,
+    t.table_number,
+    o.total_price,
+    os.order_status_name,
+    e.emp_first_name,
+    e.emp_last_name
+ORDER BY o.date_time ASC ; 
+
+  DELIMITER //
+
+-- 1. เมื่อสั่งอาหารเพิ่ม (INSERT)
+CREATE TRIGGER trg_after_order_food_insert
+AFTER INSERT ON order_food
+FOR EACH ROW
+BEGIN
+    UPDATE `order` o
+    SET o.total_price = (
+        SELECT IFNULL(SUM((of.base_price + IFNULL(opt.total_opt_price, 0)) * of.quantity), 0)
+        FROM order_food of
+        LEFT JOIN (
+            SELECT ofo.order_detail_id, SUM(fo.option_price) AS total_opt_price
+            FROM order_food_options ofo
+            JOIN food_options fo ON ofo.options_id = fo.options_id
+            GROUP BY ofo.order_detail_id
+        ) opt ON of.order_detail_id = opt.order_detail_id
+        WHERE of.order_id = NEW.order_id
+    )
+    WHERE o.order_id = NEW.order_id;
+END //
+
+-- 2. เมื่อแก้ไขรายการอาหาร เช่น เปลี่ยน quantity (UPDATE)
+CREATE TRIGGER trg_after_order_food_update
+AFTER UPDATE ON order_food
+FOR EACH ROW
+BEGIN
+    UPDATE `order` o
+    SET o.total_price = (
+        SELECT IFNULL(SUM((of.base_price + IFNULL(opt.total_opt_price, 0)) * of.quantity), 0)
+        FROM order_food of
+        LEFT JOIN (
+            SELECT ofo.order_detail_id, SUM(fo.option_price) AS total_opt_price
+            FROM order_food_options ofo
+            JOIN food_options fo ON ofo.options_id = fo.options_id
+            GROUP BY ofo.order_detail_id
+        ) opt ON of.order_detail_id = opt.order_detail_id
+        WHERE of.order_id = NEW.order_id
+    )
+    WHERE o.order_id = NEW.order_id;
+END //
+
+-- 3. เมื่อลบรายการอาหารออก (DELETE)
+CREATE TRIGGER trg_after_order_food_delete
+AFTER DELETE ON order_food
+FOR EACH ROW
+BEGIN
+    UPDATE `order` o
+    SET o.total_price = (
+        SELECT IFNULL(SUM((of.base_price + IFNULL(opt.total_opt_price, 0)) * of.quantity), 0)
+        FROM order_food of
+        LEFT JOIN (
+            SELECT ofo.order_detail_id, SUM(fo.option_price) AS total_opt_price
+            FROM order_food_options ofo
+            JOIN food_options fo ON ofo.options_id = fo.options_id
+            GROUP BY ofo.order_detail_id
+        ) opt ON of.order_detail_id = opt.order_detail_id
+        WHERE of.order_id = OLD.order_id
+    )
+    WHERE o.order_id = OLD.order_id;
+END //
+
+DELIMITER ;

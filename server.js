@@ -10,11 +10,15 @@ const cors = require('cors');
 const dashboard = require('./dashboard/dashboard.js');
 const advice = require('./advice/advice.js');
 const order = require('./order/order.js');
-const create = require('./create/create.js');
+const create = require('./create/createfood.js');
 const variantModel = require('./report/report_varians.js');
 const optionModel = require('./report/report_option.js');
 const typeModel = require('./report/report_type.js');
+const salereport = require('./salereport/salereport.js');
 const multer = require('multer');
+const createboardgame = require('./borrow/createboardgame.js');
+const editboardgametype = require('./borrow/edit_boardgame_type.js')
+const borrow = require('./borrow/borrow.js')
 
 const app = express();
 const path = require('path');
@@ -146,14 +150,23 @@ app.post("/api/authen/access_request", async (req, res) => {
 
 //dashboard
 app.get("/api/reports/revenue", checkAccessToken, async (req, res) => {
+
     console.log("reports/revenue");
+
      console.log(req.decoded);
+
     const period = req.query.period || 'daily';     // 'daily', 'monthly', 'yearly'
+
     const category = req.query.category || 'all';   // 'all', 'food', 'boardgame'
 
+
+
     const result = await dashboard.getRevenueSummary(period, category);
+
     res.setHeader('Content-Type', 'application/json');
+
     res.send(JSON.stringify(result));
+
 });
 
 
@@ -205,18 +218,31 @@ app.get("/api/reports/borrow-count", checkAccessToken, async (req, res) => {
 });
 
 app.get("/api/reports/revenue-chart", checkAccessToken, async (req, res) => {
+
     try {
+
         console.log("reports/revenue-chart");
+
         console.log(req.decoded);
+
         const { period = 'daily', category = 'all' } = req.query;
+
         let result = await dashboard.getRevenueChartData(period, category);
+
         res.json(result);
+
     } catch (err) {
-        res.status(500).json({ isError: true, 
-            data: [], 
-            errorMessage: err.message 
+
+        res.status(500).json({ isError: true,
+
+            data: [],
+
+            errorMessage: err.message
+
         });
+
     }
+
 });
 
 
@@ -517,11 +543,11 @@ app.post("/api/food/delete-type",checkAccessToken, async (req, res) => {
 
 
 
-//ยังไม่เสร็จ
-app.get("/api/order/order-list", async (req, res) => {
+
+app.get("/api/order/order-list", checkAccessToken, async (req, res) => {
     try {
-        //console.log("order/order-list");
-        //console.log(req.decoded);
+        console.log("order/order-list");
+        console.log(req.decoded);
         
 
         let result = await order.getorderList();
@@ -536,9 +562,11 @@ app.get("/api/order/order-list", async (req, res) => {
     }
 });
 
-app.post("/api/order/update-order-server", async (req, res) => {
+app.post("/api/order/update-order-server", checkAccessToken, async (req, res) => {
     try {
-    
+        console.log("order/update-order-server");
+        console.log(req.decoded);
+
         const { orderDetailId } = req.body;
 
         let result = await order.updateorderserver(orderDetailId);
@@ -556,9 +584,10 @@ app.post("/api/order/update-order-server", async (req, res) => {
     }
 });
 
-app.get("/api/advice/advice-list", async (req, res) => {
+app.get("/api/advice/advice-list", checkAccessToken, async (req, res) => {
     try {
-        console.log("order/advice-list");
+
+        console.log("advice/advice-list");
         console.log(req.decoded);
 
         let result = await advice.getadviceList();
@@ -573,9 +602,11 @@ app.get("/api/advice/advice-list", async (req, res) => {
     }
 });
 
-app.post("/api/advice/update-advice", async (req, res) => {
+app.post("/api/advice/update-advice", checkAccessToken, async (req, res) => {
     try {
-    
+        console.log("advice/update-advice");
+        console.log(req.decoded);
+
         const { adviceId } = req.body;
 
         let result = await advice.updateadvice(adviceId);
@@ -592,6 +623,125 @@ app.post("/api/advice/update-advice", async (req, res) => {
         });
     }
 });
+
+
+app.get("/api/salereport/salereport",checkAccessToken, async (req, res) => {
+    try {
+
+        console.log("salereport/salereport");
+        console.log(req.decoded);
+        const { date } = req.query; 
+        let result = await salereport.getsalereport(date);
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: [],
+            errorMessage: err.message
+        });
+    }
+});
+
+app.get("/api/reports/borrow-report", async (req, res) => {
+    try {
+        const { period} = req.query;
+
+        let result = await borrow.getBorrowReportList(period); 
+        
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: [],
+            errorMessage: err.message
+        });
+    }
+});
+
+//แก้ไขประเภทบอร์ดเกม
+app.post("/api/boardgame/create-type", checkAccessToken, async (req, res) => {
+    try {
+           const boardgame_typename = req.body.boardgame_typename
+        
+        let result = await createboardgame.boardgamecreateType(boardgame_typename);
+
+        if (result.isError) {
+            return res.status(400).json(result);
+        }
+        
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: [],
+            errorMessage: err.message
+        });
+    }
+});
+
+//แสดงประเภทบอร์ดเกม
+app.get("/api/boardgame/report-type", checkAccessToken, async (req, res) => {
+    try {
+
+        console.log("boardgame/report-type");
+        console.log(req.decoded);
+        
+        let result = await editboardgametype.getType();
+
+        if (result.isError) {
+            return res.status(400).json(result);
+        }
+
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: [],
+            errorMessage: err.message
+        });
+    }
+});
+
+//แก้ไขประเภทบอร์ดเกม
+app.post("/api/boardgame/update-type",checkAccessToken, async (req, res) => {
+    try {
+        const { boardgame_type_id, boardgame_type_name } = req.body;
+        let result = await editboardgametype.updateType({ boardgame_type_id, boardgame_type_name });
+
+        if (result.isError) {
+            return res.status(400).json(result);
+        }
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: null,
+            errorMessage: err.message
+        });
+    }
+});
+
+//ลบประเภทบอร์ดเกม
+app.post("/api/boardgame/delete-type",checkAccessToken, async (req, res) => {
+    try {
+        console.log("boardgame/delete-type");
+        console.log(req.decoded);
+        const { boardgame_type_id } = req.body;
+        let result = await editboardgametype.deleteType(boardgame_type_id);
+
+        if (result.isError) {
+            return res.status(400).json(result);
+        }
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: null,
+            errorMessage: err.message
+        });
+    }
+});
+
 
 app.listen(port, hostname, () => {
     console.log(`Server run is http://${hostname}:${port}/`);
