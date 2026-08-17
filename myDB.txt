@@ -575,3 +575,15 @@ BEGIN
 END //
 
 DELIMITER ;
+
+ALTER TABLE `play_catagory_tag_id`
+	CHANGE COLUMN `catagory_tag_id` `catagory_tag_id` INT(11) NOT NULL AUTO_INCREMENT FIRST;
+
+    ALTER TABLE `catagory_board_game`
+	CHANGE COLUMN `catagory_bg_id` `catagory_bg_id` INT(11) NOT NULL AUTO_INCREMENT FIRST;
+
+    ALTER TABLE `board_game_sale`
+	CHANGE COLUMN `bg_id` `bg_id` INT(11) NOT NULL AUTO_INCREMENT FIRST;
+
+    ALTER TABLE `board_game_play`
+	CHANGE COLUMN `bgp_id` `bgp_id` INT(11) NOT NULL AUTO_INCREMENT FIRST;
