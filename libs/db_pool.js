@@ -5,8 +5,10 @@ const pool =mariadb.createPool({
     password: '888',
     port: 3306,
     connectionLimit:5,
+    
 
-    database: 'cafe_boardgame'
+    database: 'cafe_boardgame',
+    bigIntAsNumber: true
 });
 
 module.exports=pool;

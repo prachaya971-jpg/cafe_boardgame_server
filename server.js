@@ -18,6 +18,15 @@ const typeModel = require('./report/report_type.js');
 const multer = require('multer');
 const createboardgame = require('./boardgame/createboardgame.js');
 const editboardgametype = require('./boardgame/edit_boardgame_type.js')
+const create = require('./create/createfood.js');
+const variantModel = require('./report/report_varians.js');
+const optionModel = require('./report/report_option.js');
+const typeModel = require('./report/report_type.js');
+const salereport = require('./salereport/salereport.js');
+const multer = require('multer');
+const createboardgame = require('./borrow/createboardgame.js');
+const editboardgametype = require('./borrow/edit_boardgame_type.js')
+const borrow = require('./borrow/borrow.js')
 
 const app = express();
 const path = require('path');
@@ -150,14 +159,23 @@ app.post("/api/authen/access_request", async (req, res) => {
 
 //dashboard
 app.get("/api/reports/revenue", checkAccessToken, async (req, res) => {
+
     console.log("reports/revenue");
+
      console.log(req.decoded);
+
     const period = req.query.period || 'daily';     // 'daily', 'monthly', 'yearly'
+
     const category = req.query.category || 'all';   // 'all', 'food', 'boardgame'
 
+
+
     const result = await dashboard.getRevenueSummary(period, category);
+
     res.setHeader('Content-Type', 'application/json');
+
     res.send(JSON.stringify(result));
+
 });
 
 
@@ -209,18 +227,31 @@ app.get("/api/reports/borrow-count", checkAccessToken, async (req, res) => {
 });
 
 app.get("/api/reports/revenue-chart", checkAccessToken, async (req, res) => {
+
     try {
+
         console.log("reports/revenue-chart");
+
         console.log(req.decoded);
+
         const { period = 'daily', category = 'all' } = req.query;
+
         let result = await dashboard.getRevenueChartData(period, category);
+
         res.json(result);
+
     } catch (err) {
-        res.status(500).json({ isError: true, 
-            data: [], 
-            errorMessage: err.message 
+
+        res.status(500).json({ isError: true,
+
+            data: [],
+
+            errorMessage: err.message
+
         });
+
     }
+
 });
 
 
@@ -522,7 +553,197 @@ app.post("/api/food/delete-type",checkAccessToken, async (req, res) => {
 
 
 //ยังไม่เสร็จ
-app.get("/api/order/order-list", async (req, res) => {
+// app.get("/api/order/order-list", async (req, res) => {
+//     try {
+//     try {
+//         console.log("food/create-option");
+//         console.log(req.decoded);
+
+//         const option_name = req.body.option_name;
+//         const option_price = req.body.option_price;
+//         const options_img = req.file ? req.file.filename : null;
+
+        
+//         let result = await create.createOption({ option_name, options_img, option_price });
+
+//         if (result.isError) {
+//             return res.status(400).json(result);
+//         }
+
+//         res.json(result);
+//     } catch (err) {
+//         res.status(500).json({
+//             isError: true,
+//             data: [],
+//             errorMessage: err.message
+//         });
+//     }
+// }};
+
+app.get("/api/food/options", checkAccessToken, async (req, res) => {
+    try {
+
+        console.log("food/options");
+        console.log(req.decoded);
+        
+        let result = await optionModel.getoption();
+
+        if (result.isError) {
+            return res.status(400).json(result);
+        }
+
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: [],
+            errorMessage: err.message
+        });
+    }
+});
+
+app.post("/api/food/update-option", checkAccessToken, uploadptions.single('options_img'), async (req, res) => {
+    try {
+        console.log("food/update-option");
+        console.log(req.decoded);
+
+        const { options_id, option_name, option_price } = req.body;
+        const options_img = req.file ? req.file.filename : null;
+
+        let result = await optionModel.updateOption({ 
+            options_id, 
+            option_name, 
+            options_img, 
+            option_price 
+        });
+
+        if (result.isError) {
+            return res.status(400).json(result);
+        }
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: null,
+            errorMessage: err.message
+        });
+    }
+});
+
+
+
+app.post("/api/food/delete-option",checkAccessToken, async (req, res) => {
+    try {
+        console.log("food/delete-option");
+        console.log(req.decoded);
+        const { option_id } = req.body;
+        let result = await optionModel.deleteOption(option_id);
+
+        if (result.isError) {
+            return res.status(400).json(result);
+        }
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: null,
+            errorMessage: err.message
+        });
+    }
+});
+
+//type
+app.post("/api/food/create-type", checkAccessToken, async (req, res) => {
+    try {
+        console.log("food/create-type");
+        console.log(req.decoded);
+        
+           const type_name = req.body.type_name
+        
+
+        
+        let result = await create.createType({ type_name });
+
+        if (result.isError) {
+            return res.status(400).json(result);
+        }
+
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: [],
+            errorMessage: err.message
+        });
+    }
+});
+
+app.get("/api/food/types", checkAccessToken, async (req, res) => {
+    try {
+
+        console.log("food/types");
+        console.log(req.decoded);
+        
+        let result = await typeModel.getType();
+
+        if (result.isError) {
+            return res.status(400).json(result);
+        }
+
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: [],
+            errorMessage: err.message
+        });
+    }
+});
+
+app.post("/api/food/update-type",checkAccessToken, async (req, res) => {
+    try {
+        console.log("food/update-type");
+        console.log(req.decoded);
+        const { food_type_id, food_type_name } = req.body;
+        let result = await typeModel.updateType({ food_type_id, food_type_name });
+
+        if (result.isError) {
+            return res.status(400).json(result);
+        }
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: null,
+            errorMessage: err.message
+        });
+    }
+});
+
+app.post("/api/food/delete-type",checkAccessToken, async (req, res) => {
+    try {
+        console.log("food/delete-type");
+        console.log(req.decoded);
+        const { food_type_id } = req.body;
+        let result = await typeModel.deleteType(food_type_id);
+
+        if (result.isError) {
+            return res.status(400).json(result);
+        }
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: null,
+            errorMessage: err.message
+        });
+    }
+});
+
+
+
+
+app.get("/api/order/order-list", checkAccessToken, async (req, res) => {
     try {
         console.log("order/order-list");
         console.log(req.decoded);
@@ -544,6 +765,67 @@ app.post("/api/order/update-order-server", async (req, res) => {
     try {
     
         const { orderDetailId } = req.body;
+app.post("/api/order/update-order-server", checkAccessToken, async (req, res) => {
+    try {
+        console.log("order/update-order-server");
+        console.log(req.decoded);
+
+        const { orderDetailId } = req.body;
+
+        let result = await order.updateorderserver(orderDetailId);
+
+        if (result.isError) {
+            return res.status(400).json(result);
+        }
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: null,
+            errorMessage: err.message
+        });
+    }
+});
+
+app.get("/api/advice/advice-list", checkAccessToken, async (req, res) => {
+    try {
+
+        console.log("advice/advice-list");
+        console.log(req.decoded);
+
+        let result = await advice.getadviceList();
+        
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: [],
+            errorMessage: err.message
+        });
+    }
+});
+
+app.post("/api/advice/update-advice", checkAccessToken, async (req, res) => {
+    try {
+        console.log("advice/update-advice");
+        console.log(req.decoded);
+
+        const { adviceId } = req.body;
+
+        let result = await advice.updateadvice(adviceId);
+
+        if (result.isError) {
+            return res.status(400).json(result);
+        }
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: null,
+            errorMessage: err.message
+        });
+    }
+});
 
         let result = await order.updateorderserver(orderDetailId);
 
@@ -564,6 +846,122 @@ app.get("/api/advice/advice-list", async (req, res) => {
     try {
         console.log("order/advice-list");
         console.log(req.decoded);
+app.get("/api/salereport/salereport",checkAccessToken, async (req, res) => {
+    try {
+
+        console.log("salereport/salereport");
+        console.log(req.decoded);
+        const { date } = req.query; 
+        let result = await salereport.getsalereport(date);
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: [],
+            errorMessage: err.message
+        });
+    }
+});
+
+app.get("/api/reports/borrow-report", async (req, res) => {
+    try {
+        const { period} = req.query;
+
+        let result = await borrow.getBorrowReportList(period); 
+        
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: [],
+            errorMessage: err.message
+        });
+    }
+});
+
+//แก้ไขประเภทบอร์ดเกม
+app.post("/api/boardgame/create-type", checkAccessToken, async (req, res) => {
+    try {
+           const boardgame_typename = req.body.boardgame_typename
+        
+        let result = await createboardgame.boardgamecreateType(boardgame_typename);
+
+        if (result.isError) {
+            return res.status(400).json(result);
+        }
+        
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: [],
+            errorMessage: err.message
+        });
+    }
+});
+
+//แสดงประเภทบอร์ดเกม
+app.get("/api/boardgame/report-type", checkAccessToken, async (req, res) => {
+    try {
+
+        console.log("boardgame/report-type");
+        console.log(req.decoded);
+        
+        let result = await editboardgametype.getType();
+
+        if (result.isError) {
+            return res.status(400).json(result);
+        }
+
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: [],
+            errorMessage: err.message
+        });
+    }
+});
+
+//แก้ไขประเภทบอร์ดเกม
+app.post("/api/boardgame/update-type",checkAccessToken, async (req, res) => {
+    try {
+        const { boardgame_type_id, boardgame_type_name } = req.body;
+        let result = await editboardgametype.updateType({ boardgame_type_id, boardgame_type_name });
+
+        if (result.isError) {
+            return res.status(400).json(result);
+        }
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: null,
+            errorMessage: err.message
+        });
+    }
+});
+
+//ลบประเภทบอร์ดเกม
+app.post("/api/boardgame/delete-type",checkAccessToken, async (req, res) => {
+    try {
+        console.log("boardgame/delete-type");
+        console.log(req.decoded);
+        const { boardgame_type_id } = req.body;
+        let result = await editboardgametype.deleteType(boardgame_type_id);
+
+        if (result.isError) {
+            return res.status(400).json(result);
+        }
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: null,
+            errorMessage: err.message
+        });
+    }
+});
 
         let result = await advice.getadviceList();
         

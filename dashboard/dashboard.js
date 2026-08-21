@@ -195,15 +195,15 @@ module.exports = {
 
             // 1. กำหนดเงื่อนไขเวลาและ Column Label ตาม Period
             if (period === 'monthly') {
-                // รายเดือน: ยอดขายแยกตาม "วัน" ในเดือนปัจจุบัน (1 - 31)
+                // รายเดือน: ยอดขายแยกตาม "วัน" 
                 dateCondition = "YEAR(date_time) = YEAR(CURDATE()) AND MONTH(date_time) = MONTH(CURDATE())";
                 labelColumn = "DAY(date_time)";
             } else if (period === 'yearly') {
-                // รายปี: ยอดขายแยกตาม "เดือน" ในปีปัจจุบัน (1 - 12)
+                // รายปี: ยอดขายแยกตาม "เดือน" ใ
                 dateCondition = "YEAR(date_time) = YEAR(CURDATE())";
                 labelColumn = "MONTH(date_time)";
             } else {
-                // รายวัน (daily): ยอดขายแยกตาม "ชั่วโมง" ในวันนี้ (0 - 23)
+                // รายวัน (daily): ยอดขายแยกตาม "ชั่วโมง"
                 dateCondition = "DATE(date_time) = CURDATE()";
                 labelColumn = "HOUR(date_time)";
             }
