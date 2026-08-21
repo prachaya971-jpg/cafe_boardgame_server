@@ -10,7 +10,6 @@ const cors = require('cors');
 const dashboard = require('./dashboard/dashboard.js');
 const advice = require('./advice/advice.js');
 const order = require('./order/order.js');
-const test = require('./test/test.js');
 const borrow = require('./borrow/borrow.js')
 const create = require('./create/create.js');
 const variantModel = require('./report/report_varians.js');
