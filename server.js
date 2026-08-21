@@ -17,8 +17,9 @@ const typeModel = require('./report/report_type.js');
 const salereport = require('./salereport/salereport.js');
 const multer = require('multer');
 const createboardgame = require('./borrow/createboardgame.js');
-const editboardgametype = require('./borrow/edit_boardgame_type.js')
-const borrow = require('./borrow/borrow.js')
+const editboardgametype = require('./borrow/edit_boardgame_type.js');
+const borrow = require('./borrow/borrow.js');
+const foodModel = require('./report/report_food.js');
 
 const app = express();
 const path = require('path');
@@ -66,6 +67,18 @@ const storageoptions = multer.diskStorage({
     }
 });
 const uploadptions = multer({ storage: storageoptions });
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'public/img/food');
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, 'food-' + uniqueSuffix + path.extname(file.originalname));
+    }
+});
+
+const upload = multer({ storage: storage });
 
 //authentication
 app.get("/api/users", (req, res) => {
@@ -741,6 +754,76 @@ app.post("/api/boardgame/delete-type",checkAccessToken, async (req, res) => {
         });
     }
 });
+
+// create food
+app.post("/api/food/create-food", checkAccessToken, upload.single('img_food_url'), async (req, res) => {
+    try {
+        console.log("food/create-food");
+        console.log(req.decoded);
+
+        const foodName = req.body.food_name;
+        const foodTypeId = req.body.food_type_id;
+        
+        // ถ้า variants ส่งมาเป็น JSON String ให้ parse เป็น Array
+        let variants = [];
+        if (typeof req.body.variants === 'string') {
+            variants = JSON.parse(req.body.variants);
+        } else {
+            variants = req.body.variants || [];
+        }
+
+        // 2. จัดการรูปภาพ
+        if (req.file && variants.length > 0) {
+            variants[0].img_food_url = req.file.filename;
+        }
+
+        const foodData = {
+            food_name: foodName,
+            food_type_id: foodTypeId,
+            variants: variants
+        };
+
+        const result = await create.createFood(foodData);
+
+        // 5. ส่ง Response กลับ
+        if (result.isError) {
+            return res.status(400).json(result);
+        }
+
+        res.status(201).json(result);
+
+    } catch (err) {
+        console.error("Error create food:", err);
+        res.status(500).json({
+            isError: true,
+            data: null,
+            errorMessage: err.message
+        });
+    }
+});
+
+app.get("/api/food/food", async (req, res) => {
+    try {
+
+        //console.log("food/food");
+        //console.log(req.decoded);
+        
+        let result = await foodModel.getfood();
+
+        if (result.isError) {
+            return res.status(400).json(result);
+        }
+
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: [],
+            errorMessage: err.message
+        });
+    }
+});
+
 
 
 app.listen(port, hostname, () => {

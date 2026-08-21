@@ -587,3 +587,9 @@ ALTER TABLE `play_catagory_tag_id`
 
     ALTER TABLE `board_game_play`
 	CHANGE COLUMN `bgp_id` `bgp_id` INT(11) NOT NULL AUTO_INCREMENT FIRST;
+
+    CREATE ALGORITHM = UNDEFINED SQL SECURITY DEFINER VIEW `V_food_list` AS SELECT fl.food_id,fv.img_food_url,food_name,v.variant_name,fv.food_variant_price
+FROM food_list fl
+JOIN food_variants fv ON fv.food_id=fl.food_id
+JOIN variants v ON v.variant_id=fv.variant_id
+ORDER BY fl.food_id ASC 
