@@ -4,6 +4,7 @@ const dateUtils = require('../libs/date_utils');
 const { error } = require('node:console');
 
 module.exports = {
+
 boardgamecreateType: async (boardgame_typeName) => {
     let conn;
     let result;

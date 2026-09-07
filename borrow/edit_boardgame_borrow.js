@@ -4,14 +4,14 @@ const dateUtils = require('../libs/date_utils');
 const { error } = require('node:console');
 
 module.exports = {
-    getType: async () => {
+    getbgborrow: async () => {
         let conn;
         let result;
         try {
             conn = await pool.getConnection();
             const sql = `
-                SELECT catagory_bg_id,catagory_bg_name from catagory_board_game 
-                ORDER BY catagory_bg_id ASC
+                SELECT bgp_id,bgp_name from board_game_play
+                ORDER BY bgp_id ASC
             `;
             const rows = await conn.query(sql);
             result = {
@@ -30,8 +30,7 @@ module.exports = {
             return result;
         }
     },
-
-    
+    //
     updateType: async (typeData) => {
         let conn;
         let result;
@@ -76,11 +75,11 @@ module.exports = {
     },
 
    
-    deleteType: async (boardgame_type_id) => {
+    deletebgborrow: async (bgp_id) => {
         let conn;
         let result;
         try {
-            if (!boardgame_type_id) {
+            if (!bgp_id) {
                 return {
                     isError: true,
                     data: null,
@@ -89,8 +88,8 @@ module.exports = {
             }
 
             conn = await pool.getConnection();
-            const sql = "DELETE FROM catagory_board_game WHERE catagory_bg_id = ?";
-            const res = await conn.query(sql, [boardgame_type_id]);
+            const sql = "DELETE board_game_play, play_catagory_tag_id FROM board_game_play LEFT JOIN play_catagory_tag_id ON board_game_play.bgp_id = play_catagory_tag_id.bgp_id WHERE board_game_play.bgp_id = ?;";
+            const res = await conn.query(sql, [bgp_id]);
 
             result = {
                 isError: false,

@@ -458,9 +458,6 @@ FROM advice_list a
 JOIN table_no t ON a.tablenumber = t.table_number
 JOIN status_advice sa ON a.status_advice_id= sa.status_advice_id
 WHERE DATE(a.date_time) = CURDATE() AND a.status_advice_id = 'N'
-<<<<<<< HEAD
-ORDER BY a.date_time ASC ;
-=======
 ORDER BY a.date_time ASC ;
 
 ALTER TABLE `advice_list`
@@ -590,4 +587,3 @@ ALTER TABLE `play_catagory_tag_id`
 
     ALTER TABLE `board_game_play`
 	CHANGE COLUMN `bgp_id` `bgp_id` INT(11) NOT NULL AUTO_INCREMENT FIRST;
->>>>>>> origin/main
