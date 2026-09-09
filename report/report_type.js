@@ -41,13 +41,6 @@ module.exports = {
         try {
             const { food_type_id, food_type_name } = typeData;
 
-            if (!food_type_id || !food_type_name || food_type_name.trim() === "") {
-                return {
-                    isError: true,
-                    data: null,
-                    errorMessage: ""
-                };
-            }
 
             conn = await pool.getConnection();
             const sql = "UPDATE food_type_ SET food_type_name = ? WHERE food_type_id = ?";
@@ -83,13 +76,6 @@ module.exports = {
         let conn;
         let result;
         try {
-            if (!food_type_id) {
-                return {
-                    isError: true,
-                    data: null,
-                    errorMessage: ""
-                };
-            }
 
             conn = await pool.getConnection();
             const sql = "DELETE FROM food_type_ WHERE food_type_id = ?";

@@ -10,14 +10,16 @@ module.exports = {
         try {
             conn = await pool.getConnection();
             const sql = `
-                SELECT 
-                
-                    options_id,
-                    option_name,
-                    options_img,
-                    option_price
-                FROM food_options
-                ORDER BY options_id ASC
+               SELECT 
+                fo.options_id,
+                fo.option_name,
+                fo.options_img,
+                fo.option_price,
+                fo.food_status_id,
+                fs.food_status_name
+            FROM food_options fo
+            JOIN food_status fs ON fo.food_status_id = fs.food_status_id
+            ORDER BY fo.options_id ASC;
             `;
             const rows = await conn.query(sql);
             result = {
@@ -37,7 +39,7 @@ module.exports = {
         }
     },
 
-    
+
     updateOption: async (optionData) => {
         let conn;
         let result = { isError: false, data: null, errorMessage: "" };
@@ -61,9 +63,9 @@ module.exports = {
                 WHERE options_id = ?
             `;
             const res = await conn.query(sql, [
-                option_name.trim(), 
-                options_img, 
-                option_price, 
+                option_name.trim(),
+                options_img,
+                option_price,
                 options_id
             ]);
 
@@ -86,21 +88,14 @@ module.exports = {
         }
     },
 
-   
+
     deleteOption: async (option_id) => {
         let conn;
         let result;
         try {
-            if (!option_id) {
-                return {
-                    isError: true,
-                    data: null,
-                    errorMessage: ""
-                };
-            }
 
             conn = await pool.getConnection();
-            const sql = "DELETE FROM food_options WHERE option_id = ?";
+            const sql = "DELETE FROM food_options WHERE options_id = ?";
             const res = await conn.query(sql, [option_id]);
 
 
@@ -119,5 +114,39 @@ module.exports = {
             if (conn) conn.release();
             return result;
         }
+    },
+    updatestatus: async ({ options_id, food_status_id }) => {
+        let conn;
+        try {
+           
+            conn = await pool.getConnection();
+            const sql = `
+            UPDATE food_options 
+            SET food_status_id = ? 
+            WHERE options_id = ?
+        `;
+            const res = await conn.query(sql, [food_status_id, options_id]);
+            const affectedRows = res.affectedRows ?? res[0]?.affectedRows ?? 0;
+
+            return {
+                isError: false,
+                data: {
+                    options_id: options_id,
+                    food_status_id: food_status_id,
+                    affectedRows: Number(affectedRows)
+                },
+                errorMessage: ""
+            };
+        } catch (error) {
+            return {
+                isError: true,
+                data: null,
+                errorMessage: error.message
+            };
+        } finally {
+            if (conn) conn.release();
+        }
     }
+
+
 };

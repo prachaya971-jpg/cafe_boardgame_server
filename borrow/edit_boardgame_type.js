@@ -38,14 +38,6 @@ module.exports = {
         try {
             const { boardgame_type_id, boardgame_type_name } = typeData;
 
-            if (!boardgame_type_id || !boardgame_type_name || boardgame_type_name.trim() === "") {
-                return {
-                    isError: true,
-                    data: null,
-                    errorMessage: ""
-                };
-            }
-
             conn = await pool.getConnection();
             const sql = "UPDATE catagory_board_game SET catagory_bg_name = ? WHERE catagory_bg_id = ?";
             const res = await conn.query(sql, [boardgame_type_name.trim(), boardgame_type_id]);

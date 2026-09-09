@@ -36,19 +36,31 @@ module.exports = {
     },
 
 
-    updateorderserver: async (orderDetailId) => {
+    updateorderserver: async (orderDetailId, orderstatus) => {
         let conn;
         let result;
         try {
             conn = await pool.getConnection();
 
+            let Status = '';
+            if (orderstatus === 'N') {
+                Status = 'A';
+            } else if (orderstatus === 'A') {
+                Status = 'Y';
+            } else {
+                Status = 'N'; 
+            }
+
             const sql = `
-            UPDATE order_food SET serve_status_id = 'Y' WHERE order_detail_id = ?
+            UPDATE order_food 
+            SET serve_status_id = ? 
+            WHERE order_detail_id = ?
         `;
 
-            const res = await conn.query(sql, [orderDetailId]);
+            const res = await conn.query(sql, [Status, orderDetailId]);
+            const affectedRows = res.affectedRows ?? res[0]?.affectedRows ?? 0;
 
-            if (res.affectedRows === 0) {
+            if (affectedRows === 0) {
                 result = {
                     isError: true,
                     data: null,
@@ -57,7 +69,10 @@ module.exports = {
             } else {
                 result = {
                     isError: false,
-                    data: { affectedRows: Number(res.affectedRows) },
+                    data: {
+                        affectedRows: Number(affectedRows),
+                        currentStatus: Status
+                    },
                     errorMessage: ""
                 };
             }
@@ -69,7 +84,8 @@ module.exports = {
             };
         } finally {
             if (conn) conn.release();
-            return result;
         }
+
+        return result;
     },
 }

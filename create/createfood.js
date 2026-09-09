@@ -43,11 +43,11 @@ module.exports = {
         try {
             conn = await pool.getConnection();
 
-            const { option_name, options_img, option_price } = optionData;
+            const { option_name, options_img, option_price, food_status_id } = optionData;
 
-            var sqloption = "INSERT INTO food_options (option_name, options_img, option_price) VALUES (?, ?, ?)";
+            var sqloption = "INSERT INTO food_options (option_name, options_img, option_price, food_status_id) VALUES (?, ?, ?, ?)";
 
-            await conn.query(sqloption, [option_name, options_img, option_price]);
+            await conn.query(sqloption, [option_name, options_img, option_price, food_status_id]);
 
             result = {
                 isError: false,
@@ -118,8 +118,8 @@ module.exports = {
             
             for (const variant of foodData.variants) {
                 const sqlVariant = `
-                INSERT INTO food_variants (food_id, variant_id, food_variant_price, img_food_url) 
-                VALUES (?, ?, ?, ?)
+                INSERT INTO food_variants (food_id, variant_id, food_variant_price, img_food_url, food_status_id) 
+                VALUES (?, ?, ?, ?, 'Y')
             `;
                 
                 const variantResult = await conn.query(sqlVariant, [
@@ -165,6 +165,29 @@ module.exports = {
             if (conn) conn.release();
             return result;
         }
-    }
+    },
+    getstatusfood: async () => {
+        let conn;
+        let result;
+        try {
+            conn = await pool.getConnection();
+            const sql = "SELECT * FROM food_status";
+            const rows = await conn.query(sql);
 
+            result = {
+                isError: false,
+                data: rows,
+                errorMessage: ""
+            };
+        } catch (error) {
+            result = {
+                isError: true,
+                data: [],
+                errorMessage: error.message
+            };
+        } finally {
+            if (conn) conn.release();
+            return result;
+        }
+    },
 }

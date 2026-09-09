@@ -588,8 +588,66 @@ ALTER TABLE `play_catagory_tag_id`
     ALTER TABLE `board_game_play`
 	CHANGE COLUMN `bgp_id` `bgp_id` INT(11) NOT NULL AUTO_INCREMENT FIRST;
 
-    CREATE ALGORITHM = UNDEFINED SQL SECURITY DEFINER VIEW `V_food_list` AS SELECT fl.food_id,fv.img_food_url,food_name,v.variant_name,fv.food_variant_price
+    CREATE ALGORITHM = UNDEFINED SQL SECURITY DEFINER VIEW `V_food_list` AS SELECT 
+    fl.food_id,
+    fv.img_food_url,
+    fl.food_name,
+    fv.food_variant_id,
+    v.variant_name,
+    fv.food_variant_price,
+    IFNULL(GROUP_CONCAT(fo.options_id SEPARATOR ', '), '-') AS option_id,
+    IFNULL(GROUP_CONCAT(fo.option_name SEPARATOR ', '), '-') AS option_name
 FROM food_list fl
-JOIN food_variants fv ON fv.food_id=fl.food_id
-JOIN variants v ON v.variant_id=fv.variant_id
+JOIN food_variants fv ON fv.food_id = fl.food_id
+JOIN variants v ON v.variant_id = fv.variant_id
+LEFT JOIN food_menu_options fm ON fv.food_variant_id = fm.food_variant_id
+LEFT JOIN food_options fo ON fm.options_id = fo.options_id
+GROUP BY 
+    fv.food_variant_id
 ORDER BY fl.food_id ASC 
+
+
+ALTER TABLE `employee`
+	ADD COLUMN `img_emp` VARCHAR(255) NULL DEFAULT NULL AFTER `tel`,
+	ADD COLUMN `Column 12` INT NULL AFTER `password_status_id`;
+
+CREATE ALGORITHM = UNDEFINED SQL SECURITY DEFINER VIEW `v_emp` AS SELECT 
+    e.emp_id,
+    e.user_id,
+    CONCAT(e.emp_first_name, ' ', e.emp_last_name) AS full_name,
+    e.age,
+    e.sex,
+    e.tel,
+    e.img_emp,
+    er.emp_role_id,
+    er.emp_role_name,
+    er.salary,
+    ps.password_status_id,
+    ps.password_status_name,
+    es.emp_status_id,
+    es.emp_status_name
+FROM employee e
+JOIN emp_role er ON er.emp_role_id =e.emp_role_id
+JOIN emp_status es ON es.emp_status_id =e.emp_status_id
+JOIN password_status ps ON ps.password_status_id = e.password_status_id ;
+
+
+CREATE TABLE `food_status` (
+	`food_status_id` INT NOT NULL AUTO_INCREMENT,
+	`food_status_name` VARCHAR(100) NULL DEFAULT NULL COLLATE 'utf16_thai_520_w2',
+	PRIMARY KEY (`food_status_id`)
+)
+COLLATE='utf8mb3_thai_520_w2'
+;
+
+ALTER TABLE `food_options`
+	ADD COLUMN `food_status_id` VARCHAR(1) NULL AFTER `option_price`,
+	ADD CONSTRAINT `food_status_id` FOREIGN KEY (`food_status_id`) REFERENCES `food_status` (`food_status_id`) ON UPDATE NO ACTION ON DELETE NO ACTION;
+
+    ALTER TABLE `food_status`
+	CHANGE COLUMN `food_status_id` `food_status_id` VARCHAR(1) NOT NULL FIRST;
+
+ALTER TABLE `food_variants`
+	ADD COLUMN `food_status_id` VARCHAR(1) NULL DEFAULT NULL AFTER `variant_id`,
+	ADD CONSTRAINT `FK_food_variants_food_status` FOREIGN KEY (`food_status_id`) REFERENCES `food_status` (`food_status_id`) ON UPDATE NO ACTION ON DELETE NO ACTION;
+

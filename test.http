@@ -89,3 +89,86 @@ Content-Type: application/json
 {
 
 }
+###
+POST http://localhost:3000/api/food/delete-food
+Content-Type: application/json
+
+{
+  "food_id": 17,
+  "food_variant_id": 23
+}
+###
+GET http://localhost:3000/api/emp/emp HTTP/1.1
+###
+GET http://localhost:3000/api/emp/emp?type=emprole&value=2
+###
+GET http://localhost:3000/api/emp/emp?type=status_ps&value=Y
+
+###
+POST http://localhost:3000/api/emp/update-emp-status
+Content-Type: application/json
+
+{
+  "emp_id": 1
+}
+###
+GET http://192.168.1.4:3000/api/test
+###
+POST http://localhost:3000/api/food/delete-option
+Content-Type: application/json
+
+{
+  "option_id": 1
+}
+###
+POST http://localhost:3000/api/emp/delete-emp
+Content-Type: application/json
+
+{
+  "emp_id": 10
+}
+###
+POST http://localhost:3000/api/table/create-table
+###
+GET  http://localhost:3000/api/table/table
+###
+
+POST http://localhost:3000/api/table/delete-table
+###
+GET  http://localhost:3000/api/food/food-status
+###
+
+GET  http://localhost:3000/api/emp/emp-role
+###
+POST http://localhost:3000/api/emp/reset-password-status
+Content-Type: application/json
+
+{
+  "emp_id": 2,
+  "new_password": "2222"
+}
+####
+POST http://localhost:3000/api/emp/create-emp
+Content-Type: application/json
+
+{
+  "user_id": "user123",
+  "emp_first_name": "John",
+  "emp_last_name": "Doe",
+  "password": "password123",
+  "age": 30,
+  "tel": "1234567894",
+  "sex": "ชาย",
+  "emp_role_id": 2,
+  "img_emp": "john_doe.jpg"
+}
+####
+
+POST http://localhost:3000/api/order/update-order-server
+Content-Type: application/json
+
+{
+  "orderDetailId": "1",
+  "orderstatus": "N"
+}
+        
