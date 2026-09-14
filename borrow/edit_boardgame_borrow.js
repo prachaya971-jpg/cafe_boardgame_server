@@ -10,9 +10,16 @@ module.exports = {
         try {
             conn = await pool.getConnection();
             const sql = `
-                SELECT bgp_id,bgp_name from board_game_play
-                ORDER BY bgp_id ASC
+                SELECT
+                    bgp.bgp_id,bgp.bgp_name,bgp.quantity,bgp.img_game_play,
+                        GROUP_CONCAT(cbg.catagory_bg_name SEPARATOR ',' ) as "catagorylist" 
+                        FROM board_game_play bgp
+                            LEFT JOIN play_catagory_tag_id bgpt ON bgpt.bgp_id = bgp.bgp_id
+                            LEFT JOIN catagory_board_game cbg ON cbg.catagory_bg_id = bgpt.catagory_bg_id
+                    GROUP BY bgp.bgp_id 
             `;
+
+            // boardgame_borrow_name, boardgame_borrow_quantity, borrow_img, catagory_id
             const rows = await conn.query(sql);
             result = {
                 isError: false,
@@ -74,7 +81,7 @@ module.exports = {
         }
     },
 
-   
+
     deletebgborrow: async (bgp_id) => {
         let conn;
         let result;
@@ -88,8 +95,17 @@ module.exports = {
             }
 
             conn = await pool.getConnection();
-            const sql = "DELETE board_game_play, play_catagory_tag_id FROM board_game_play LEFT JOIN play_catagory_tag_id ON board_game_play.bgp_id = play_catagory_tag_id.bgp_id WHERE board_game_play.bgp_id = ?;";
-            const res = await conn.query(sql, [bgp_id]);
+            const sql001 = `DELETE FROM play_catagory_tag_id 
+                            WHERE bgp_id = ?;`;
+         
+            const sql002 = `DELETE FROM board_game_play 
+                            WHERE bgp_id = ?;`;
+
+            await conn.query(sql001, [bgp_id]);
+            await conn.query(sql002, [bgp_id]);
+            // const res888 = await conn.query(sql002, [bgp_id]);
+            await conn.commit();
+            
 
             result = {
                 isError: false,
