@@ -128,3 +128,22 @@ Content-Type: application/json
   "catagory_id": 1, 
   "boardgame_sell_barcode": 67676767676676
 }
+
+
+###
+GET http://localhost:3000/api/boardgame/report-bgsell HTTP/1.1
+Content-Type: application/json
+
+{
+
+}
+
+
+###
+
+POST http://localhost:3000/api/boardgame/delete-bgsell HTTP/1.1
+Content-Type: application/json
+
+{
+  "bgs_id": 204
+}

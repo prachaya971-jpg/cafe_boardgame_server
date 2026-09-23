@@ -23,6 +23,7 @@ const editboardgameborrow = require('./borrow/edit_boardgame_borrow.js')
 const salereport = require('./salereport/salereport.js');
 const createboardgame_sell = require('./boardgame_for_sell/createboardgame_sell.js');
 const foodModel = require('./report/report_food.js');
+const edit_boardgame_sell = require('./boardgame_for_sell/edit_boardgame_sell.js');
 
 const app = express();
 const path = require('path');
@@ -101,7 +102,7 @@ const uploadboardgame_borrow = multer({ storage: storageboardgame_borrow });
 // ตำแหน่งเก็บภาพบอร์ดเกมสำหรับขาย
 const storageboardgame_sell = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, path.join(__dirname, 'img/borrow')); 
+        cb(null, path.join(__dirname, 'img/boardgame')); 
     },
     filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -1049,6 +1050,49 @@ app.post("/api/boardgame_for_sell/createboardgame_sell" , uploadboardgame_sell.s
     }
 });
 
+
+//แสดงบอร์ดเกมสำหรับขาย
+app.get("/api/boardgame/report-bgsell", async (req, res) => {
+    try {
+
+        console.log("boardgame/report-bgsell");
+        console.log(req.decoded);
+        
+        let result = await edit_boardgame_sell.getbgsell();
+
+        if (result.isError) {
+            return res.status(400).json(result);
+        }
+
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: [],
+            errorMessage: err.message
+        });
+    }
+});
+
+app.post("/api/boardgame/delete-bgsell", async (req, res,) => {
+    try {
+        console.log("boardgame/delete-bgsell");
+        console.log(req.decoded);
+        const { bgs_id } = req.body;
+        let result = await edit_boardgame_sell.deletebgsell(bgs_id);
+
+        if (result.isError) {
+            return res.status(400).json(result);
+        }
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: null,
+            errorMessage: err.message
+        });
+    }
+});
 
 app.listen(port, hostname, () => {
     console.log(`Server run is http://${hostname}:${port}/`);
