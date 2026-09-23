@@ -171,4 +171,17 @@ Content-Type: application/json
   "orderDetailId": "1",
   "orderstatus": "N"
 }
-        
+###
+GET http://192.168.1.4:3000/api/test
+###
+POST http://localhost:3000/api/table/cus-req-table
+Content-Type: application/json
+
+{
+  "table_number": "1"
+}
+###
+
+POST http://localhost:3000/api/table/access_request
+###
+GET http://192.168.1.4:3000/api/menu/menu

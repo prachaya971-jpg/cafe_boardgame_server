@@ -5,7 +5,7 @@ const userAccountModel = require('./models/user_account');
 const jwt = require('./libs/jwt');
 const dateUtils = require('./libs/date_utils');
 const { isErrored } = require('stream');
-const { error } = require('console');
+const { error, table } = require('console');
 const cors = require('cors');
 const dashboard = require('./dashboard/dashboard.js');
 const advice = require('./advice/advice.js');
@@ -23,12 +23,28 @@ const foodModel = require('./report/report_food.js');
 const empModel = require('./emp/emp.js')
 const tableModel = require('./table/table.js')
 const resetpassModel = require('./models/resetpass.js');
-
+const tablecheckModel = require('./tablecus/table_check.js');
+const tablereq = require('./table/tablereq.js');
+const tablereqcus = require('./tablecus/table_req_cus.js');
+const menu = require('./customer/menu/menu.js');
+const { Server } = require('socket.io');
 const app = express();
+const server = http.createServer(app);
 const path = require('path');
+const table_check = require('./tablecus/table_check.js');
 app.use(cors());
 app.use('/img', express.static(path.join(__dirname, 'img')));
 app.use('/img/options', express.static(path.join(__dirname, 'img/options')));
+
+
+const io = new Server(server, {
+    cors: {
+        origin: "*",
+        methods: ["GET", "POST"]
+    }
+});
+
+app.set('io', io);
 
 app.use(express.json());
 
@@ -60,9 +76,35 @@ const checkAccessToken = (req, res, next) => {
             });
         });
 }
+
+const checkAccessTokencus = (req, res, next) => {
+    let token = null;
+
+    if (req.headers.authorization && req.headers.authorization.split(' ')[0] === 'Bearer') {
+        token = req.headers.authorization.split(' ')[1];
+    } else if (req.query && req.query.token) {
+        token = req.query.token;
+    } else {
+        token = req.body.token;
+    }
+
+    jwt.verify(token)
+        .then((decoded) => {
+            req.decoded = decoded;
+            next();
+        }, (err) => {
+            res.json({
+                isError: false,
+                result: false,
+                errorMessage: "ยังไม่ได้เเสกน Qr"
+            });
+        });
+}
+
+
 const storageoptions = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, path.join(__dirname, 'img/options')); 
+        cb(null, path.join(__dirname, 'img/options'));
     },
     filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -74,7 +116,7 @@ const uploadptions = multer({ storage: storageoptions });
 
 const empstorage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, path.join(__dirname, 'img/emp')); 
+        cb(null, path.join(__dirname, 'img/emp'));
     },
     filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -86,7 +128,7 @@ const uploademp = multer({ storage: empstorage });
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, path.join(__dirname, 'img/food')); 
+        cb(null, path.join(__dirname, 'img/food'));
     },
     filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -96,21 +138,22 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
+
+//app.get("/api/users", (req, res) => {
+//var response = {
+// isError: true,
+//data: "You are unauthorized for this data"
+//};
+//res.send(JSON.stringify(response));
+//});
+
+//app.get("/api/users/:accountId", async (req, res) => {
+// const accountId = req.params.accountId;
+// const response = await userAccountModel.getUserAccountById(accountId);
+//res.send(JSON.stringify(response));
+//});
+
 //authentication
-app.get("/api/users", (req, res) => {
-    var response = {
-        isError: true,
-        data: "You are unauthorized for this data"
-    };
-    res.send(JSON.stringify(response));
-});
-
-app.get("/api/users/:accountId", async (req, res) => {
-    const accountId = req.params.accountId;
-    const response = await userAccountModel.getUserAccountById(accountId);
-    res.send(JSON.stringify(response));
-});
-
 app.post("/api/authen/authen_request", async (req, res) => {
     console.log(req.body.authen_request)
     const authenRequest = req.body.authen_request;
@@ -183,7 +226,7 @@ app.get("/api/reports/revenue", checkAccessToken, async (req, res) => {
 
     console.log("reports/revenue");
 
-     console.log(req.decoded);
+    console.log(req.decoded);
 
     const period = req.query.period || 'daily';     // 'daily', 'monthly', 'yearly'
 
@@ -200,7 +243,7 @@ app.get("/api/reports/revenue", checkAccessToken, async (req, res) => {
 });
 
 
-app.get("/api/reports/order-count",checkAccessToken, async (req, res) => {
+app.get("/api/reports/order-count", checkAccessToken, async (req, res) => {
     try {
         console.log("reports/order-count");
         console.log(req.decoded);
@@ -263,7 +306,8 @@ app.get("/api/reports/revenue-chart", checkAccessToken, async (req, res) => {
 
     } catch (err) {
 
-        res.status(500).json({ isError: true,
+        res.status(500).json({
+            isError: true,
 
             data: [],
 
@@ -301,11 +345,11 @@ app.post("/api/food/create-variant", checkAccessToken, async (req, res) => {
     try {
         console.log("food/create-variant");
         console.log(req.decoded);
-        
-           const variant_name = req.body.variant_name
-        
 
-        
+        const variant_name = req.body.variant_name
+
+
+
         let result = await create.createVariant({ variant_name });
 
         if (result.isError) {
@@ -327,7 +371,7 @@ app.get("/api/food/variants", checkAccessToken, async (req, res) => {
 
         console.log("food/variants");
         console.log(req.decoded);
-        
+
         let result = await variantModel.getvarians();
 
         if (result.isError) {
@@ -344,7 +388,7 @@ app.get("/api/food/variants", checkAccessToken, async (req, res) => {
     }
 });
 
-app.post("/api/food/update-variant",checkAccessToken, async (req, res) => {
+app.post("/api/food/update-variant", checkAccessToken, async (req, res) => {
     try {
         console.log("food/update-variant");
         console.log(req.decoded);
@@ -364,7 +408,7 @@ app.post("/api/food/update-variant",checkAccessToken, async (req, res) => {
     }
 });
 
-app.post("/api/food/delete-variant",checkAccessToken, async (req, res) => {
+app.post("/api/food/delete-variant", checkAccessToken, async (req, res) => {
     try {
         console.log("food/delete-variant");
         console.log(req.decoded);
@@ -395,7 +439,7 @@ app.post("/api/food/create-option", uploadptions.single('options_img'), checkAcc
         const options_img = req.file ? req.file.filename : null;
         const food_status_id = req.body.food_status_id;
 
-        
+
         let result = await create.createOption({ option_name, options_img, option_price, food_status_id });
 
         if (result.isError) {
@@ -417,7 +461,7 @@ app.get("/api/food/options", checkAccessToken, async (req, res) => {
 
         console.log("food/options");
         console.log(req.decoded);
-        
+
         let result = await optionModel.getoption();
 
         if (result.isError) {
@@ -442,11 +486,11 @@ app.post("/api/food/update-option", checkAccessToken, uploadptions.single('optio
         const { options_id, option_name, option_price } = req.body;
         const options_img = req.file ? req.file.filename : null;
 
-        let result = await optionModel.updateOption({ 
-            options_id, 
-            option_name, 
-            options_img, 
-            option_price 
+        let result = await optionModel.updateOption({
+            options_id,
+            option_name,
+            options_img,
+            option_price
         });
 
         if (result.isError) {
@@ -464,7 +508,7 @@ app.post("/api/food/update-option", checkAccessToken, uploadptions.single('optio
 
 
 
-app.post("/api/food/delete-option",checkAccessToken, async (req, res) => {
+app.post("/api/food/delete-option", checkAccessToken, async (req, res) => {
     try {
         console.log("food/delete-option");
         console.log(req.decoded);
@@ -489,11 +533,11 @@ app.post("/api/food/create-type", checkAccessToken, async (req, res) => {
     try {
         console.log("food/create-type");
         console.log(req.decoded);
-        
-           const type_name = req.body.type_name
-        
 
-        
+        const type_name = req.body.type_name
+
+
+
         let result = await create.createType({ type_name });
 
         if (result.isError) {
@@ -515,7 +559,7 @@ app.get("/api/food/types", checkAccessToken, async (req, res) => {
 
         console.log("food/types");
         console.log(req.decoded);
-        
+
         let result = await typeModel.getType();
 
         if (result.isError) {
@@ -532,7 +576,7 @@ app.get("/api/food/types", checkAccessToken, async (req, res) => {
     }
 });
 
-app.post("/api/food/update-type",checkAccessToken, async (req, res) => {
+app.post("/api/food/update-type", checkAccessToken, async (req, res) => {
     try {
         console.log("food/update-type");
         console.log(req.decoded);
@@ -552,7 +596,7 @@ app.post("/api/food/update-type",checkAccessToken, async (req, res) => {
     }
 });
 
-app.post("/api/food/delete-type",checkAccessToken, async (req, res) => {
+app.post("/api/food/delete-type", checkAccessToken, async (req, res) => {
     try {
         console.log("food/delete-type");
         console.log(req.decoded);
@@ -579,7 +623,7 @@ app.get("/api/order/order-list", checkAccessToken, async (req, res) => {
     try {
         console.log("order/order-list");
         console.log(req.decoded);
-        
+
 
         let result = await order.getorderList();
 
@@ -593,14 +637,14 @@ app.get("/api/order/order-list", checkAccessToken, async (req, res) => {
     }
 });
 
-app.post("/api/order/update-order-server",checkAccessToken, async (req, res) => {
+app.post("/api/order/update-order-server", checkAccessToken, async (req, res) => {
     try {
         console.log("order/update-order-server");
         console.log(req.decoded);
 
-        const { orderDetailId,orderstatus } = req.body;
+        const { orderDetailId, orderstatus } = req.body;
 
-        let result = await order.updateorderserver(orderDetailId,orderstatus);
+        let result = await order.updateorderserver(orderDetailId, orderstatus);
 
         if (result.isError) {
             return res.status(400).json(result);
@@ -622,7 +666,7 @@ app.get("/api/advice/advice-list", checkAccessToken, async (req, res) => {
         console.log(req.decoded);
 
         let result = await advice.getadviceList();
-        
+
         res.json(result);
     } catch (err) {
         res.status(500).json({
@@ -657,12 +701,12 @@ app.post("/api/advice/update-advice", checkAccessToken, async (req, res) => {
 
 
 
-app.get("/api/salereport/salereport",checkAccessToken, async (req, res) => {
+app.get("/api/salereport/salereport", checkAccessToken, async (req, res) => {
     try {
 
         console.log("salereport/salereport");
         console.log(req.decoded);
-        const { date } = req.query; 
+        const { date } = req.query;
         let result = await salereport.getsalereport(date);
         res.json(result);
     } catch (err) {
@@ -676,10 +720,10 @@ app.get("/api/salereport/salereport",checkAccessToken, async (req, res) => {
 
 app.get("/api/reports/borrow-report", async (req, res) => {
     try {
-        const { period} = req.query;
+        const { period } = req.query;
 
-        let result = await borrow.getBorrowReportList(period); 
-        
+        let result = await borrow.getBorrowReportList(period);
+
         res.json(result);
     } catch (err) {
         res.status(500).json({
@@ -693,14 +737,14 @@ app.get("/api/reports/borrow-report", async (req, res) => {
 //แก้ไขประเภทบอร์ดเกม
 app.post("/api/boardgame/create-type", checkAccessToken, async (req, res) => {
     try {
-           const boardgame_typename = req.body.boardgame_typename
-        
+        const boardgame_typename = req.body.boardgame_typename
+
         let result = await createboardgame.boardgamecreateType(boardgame_typename);
 
         if (result.isError) {
             return res.status(400).json(result);
         }
-        
+
         res.json(result);
     } catch (err) {
         res.status(500).json({
@@ -717,7 +761,7 @@ app.get("/api/boardgame/report-type", checkAccessToken, async (req, res) => {
 
         console.log("boardgame/report-type");
         console.log(req.decoded);
-        
+
         let result = await editboardgametype.getType();
 
         if (result.isError) {
@@ -735,7 +779,7 @@ app.get("/api/boardgame/report-type", checkAccessToken, async (req, res) => {
 });
 
 //แก้ไขประเภทบอร์ดเกม
-app.post("/api/boardgame/update-type",checkAccessToken, async (req, res) => {
+app.post("/api/boardgame/update-type", checkAccessToken, async (req, res) => {
     try {
         const { boardgame_type_id, boardgame_type_name } = req.body;
         let result = await editboardgametype.updateType({ boardgame_type_id, boardgame_type_name });
@@ -754,7 +798,7 @@ app.post("/api/boardgame/update-type",checkAccessToken, async (req, res) => {
 });
 
 //ลบประเภทบอร์ดเกม
-app.post("/api/boardgame/delete-type",checkAccessToken, async (req, res) => {
+app.post("/api/boardgame/delete-type", checkAccessToken, async (req, res) => {
     try {
         console.log("boardgame/delete-type");
         console.log(req.decoded);
@@ -818,7 +862,7 @@ app.post("/api/food/create-food", checkAccessToken, upload.single('img_food_url'
 
         const foodName = req.body.food_name;
         const foodTypeId = req.body.food_type_id;
-        
+
         let variants = [];
         if (typeof req.body.variants === 'string') {
             variants = JSON.parse(req.body.variants);
@@ -854,7 +898,7 @@ app.post("/api/food/create-food", checkAccessToken, upload.single('img_food_url'
         });
     }
 });
-app.get("/api/food/food-status",checkAccessToken, async (req, res) => {
+app.get("/api/food/food-status", checkAccessToken, async (req, res) => {
     try {
         let result = await create.getstatusfood();
         if (result.isError) {
@@ -896,7 +940,7 @@ app.post("/api/food/update-foodvariant", checkAccessToken, upload.single('img_fo
             food_id: foodId,
             food_variant_id: foodVariantId,
             food_name: foodName,
-            food_type_id:foodTypeId,
+            food_type_id: foodTypeId,
             food_variant_price: foodVariantPrice,
             option_ids: optionIds,
             img_food_url: imgFoodUrl
@@ -920,12 +964,12 @@ app.post("/api/food/update-foodvariant", checkAccessToken, upload.single('img_fo
     }
 });
 
-app.get("/api/food/food", async (req, res) => {
+app.get("/api/food/food", checkAccessToken, async (req, res) => {
     try {
 
         //console.log("food/food");
         //console.log(req.decoded);
-        
+
         let result = await foodModel.getfood();
 
         if (result.isError) {
@@ -942,12 +986,12 @@ app.get("/api/food/food", async (req, res) => {
     }
 });
 
-app.post("/api/food/delete-food", async (req, res) => {
+app.post("/api/food/delete-food", checkAccessToken, async (req, res) => {
     try {
         //console.log("boardgame/delete-type");
         //console.log(req.decoded);
         const { food_id, food_variant_id } = req.body;
-        let result = await foodModel.deletefood(food_id,food_variant_id);
+        let result = await foodModel.deletefood(food_id, food_variant_id);
 
         if (result.isError) {
             return res.status(400).json(result);
@@ -963,12 +1007,12 @@ app.post("/api/food/delete-food", async (req, res) => {
 });
 
 
-app.get("/api/emp/emp", async (req, res) => {
+app.get("/api/emp/emp", checkAccessToken, async (req, res) => {
     try {
 
         //console.log("food/food");
         //console.log(req.decoded);
-        
+
         let result = await empModel.getemp();
 
         if (result.isError) {
@@ -985,12 +1029,12 @@ app.get("/api/emp/emp", async (req, res) => {
     }
 });
 
-app.get("/api/emp/emp-role", async (req, res) => {
+app.get("/api/emp/emp-role", checkAccessToken, async (req, res) => {
     try {
 
         //console.log("food/emp-role");
         //console.log(req.decoded);
-        
+
         let result = await empModel.getemprole();
 
         if (result.isError) {
@@ -1007,7 +1051,7 @@ app.get("/api/emp/emp-role", async (req, res) => {
     }
 });
 
-app.post("/api/emp/update-emp-status", async (req, res) => {
+app.post("/api/emp/update-emp-status", checkAccessToken, async (req, res) => {
     try {
         const { emp_id, new_temp_password } = req.body;
 
@@ -1026,7 +1070,7 @@ app.post("/api/emp/update-emp-status", async (req, res) => {
     }
 });
 
-app.post("/api/emp/delete-emp", async (req, res) => {
+app.post("/api/emp/delete-emp", checkAccessToken, async (req, res) => {
     try {
         //console.log("food/delete-option");
         //console.log(req.decoded);
@@ -1046,7 +1090,7 @@ app.post("/api/emp/delete-emp", async (req, res) => {
     }
 });
 
-app.post("/api/emp/update-emp-newstatus", async (req, res) => {
+app.post("/api/emp/update-emp-newstatus", checkAccessToken, async (req, res) => {
     try {
         //console.log("/api/emp/update-emp-newstatus");
         //console.log(req.decoded);
@@ -1086,7 +1130,7 @@ app.post("/api/emp/update-emp", checkAccessToken, uploademp.single("img_emp"), a
         if (result.isError) {
             return res.status(400).json(result);
         }
-        return res.status(200).json(result); 
+        return res.status(200).json(result);
     } catch (err) {
         console.error("Error update emp:", err);
         return res.status(500).json({
@@ -1097,7 +1141,7 @@ app.post("/api/emp/update-emp", checkAccessToken, uploademp.single("img_emp"), a
     }
 });
 
-app.post("/api/emp/reset-password-status", async (req, res) => {
+app.post("/api/emp/reset-password-status", checkAccessToken, async (req, res) => {
     try {
         const { emp_id, new_password } = req.body;
 
@@ -1116,9 +1160,9 @@ app.post("/api/emp/reset-password-status", async (req, res) => {
     }
 });
 
-app.post("/api/emp/create-emp", uploademp.single("img_emp"), async (req, res) => {
+app.post("/api/emp/create-emp", checkAccessToken, uploademp.single("img_emp"), async (req, res) => {
     try {
-        const { user_id, emp_first_name, emp_last_name, age, tel, sex, emp_role_id, password} = req.body;
+        const { user_id, emp_first_name, emp_last_name, age, tel, sex, emp_role_id, password } = req.body;
         const img_emp = req.file ? req.file.filename : null;
 
         const result = await empModel.createemp({
@@ -1136,7 +1180,7 @@ app.post("/api/emp/create-emp", uploademp.single("img_emp"), async (req, res) =>
         if (result.isError) {
             return res.status(400).json(result);
         }
-        return res.status(200).json(result); 
+        return res.status(200).json(result);
     } catch (err) {
         console.error("Error update emp:", err);
         return res.status(500).json({
@@ -1147,32 +1191,32 @@ app.post("/api/emp/create-emp", uploademp.single("img_emp"), async (req, res) =>
     }
 });
 
-app.get('/api/emp/generate-id', async (req, res) => {
-  try {
-    const result = await empModel.generateuserid();
+app.get('/api/emp/generate-id', checkAccessToken, async (req, res) => {
+    try {
+        const result = await empModel.generateuserid();
 
-    if (result.isError) {
-      return res.status(500).json({
-        status: false,
-        message: result.errorMessage || 'เกิดข้อผิดพลาดในการสร้างรหัสพนักงาน',
-      });
+        if (result.isError) {
+            return res.status(500).json({
+                status: false,
+                message: result.errorMessage || 'เกิดข้อผิดพลาดในการสร้างรหัสพนักงาน',
+            });
+        }
+        return res.status(200).json({
+            status: true,
+            emp_id: result.data.emp_id,
+        });
+    } catch (error) {
+        return res.status(500).json({
+            status: false,
+            message: error.message,
+        });
     }
-    return res.status(200).json({
-      status: true,
-      emp_id: result.data.emp_id,
-    });
-  } catch (error) {
-    return res.status(500).json({
-      status: false,
-      message: error.message,
-    });
-  }
 });
 
 
-app.post("/api/table/create-table", async (req, res) => {
+app.post("/api/table/create-table", checkAccessToken, async (req, res) => {
     try {
-       // console.log("table/create-table");
+        // console.log("table/create-table");
         //console.log(req.decoded);
 
         let result = await tableModel.createtable();
@@ -1191,9 +1235,9 @@ app.post("/api/table/create-table", async (req, res) => {
     }
 });
 
-app.get("/api/table/table", async (req, res) => {
+app.get("/api/table/table", checkAccessToken, async (req, res) => {
     try {
-       // console.log("table/create-table");
+        // console.log("table/create-table");
         //console.log(req.decoded);
 
         let result = await tableModel.gettable();
@@ -1212,9 +1256,9 @@ app.get("/api/table/table", async (req, res) => {
     }
 });
 
-app.post("/api/table/delete-table", async (req, res) => {
+app.post("/api/table/delete-table", checkAccessToken, async (req, res) => {
     try {
-       // console.log("table/create-table");
+        // console.log("table/create-table");
         //console.log(req.decoded);
 
         let result = await tableModel.deletetable();
@@ -1233,12 +1277,232 @@ app.post("/api/table/delete-table", async (req, res) => {
     }
 });
 
+app.get("/api/table/table-req-list", checkAccessToken, async (req, res) => {
+    try {
+
+        console.log("table/table-req-list");
+        console.log(req.decoded);
+
+        let result = await tablereq.gettablereqList();
+
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: [],
+            errorMessage: err.message
+        });
+    }
+});
+
+app.get("/api/table_requests/count", checkAccessToken, async (req, res) => {
+    try {
+        console.log("table_requests/count");
+        console.log(req.decoded);
+
+        const result = await tablereq.gettablereqcount();
+        res.json(result);
+    }
+    catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: [],
+            errorMessage: err.message
+        });
+    }
+});
+
+io.on('connection', (socket) => {
+    socket.on('join_table_room', (tableNumber) => {
+        const roomName = `table_${String(tableNumber).trim()}`;
+        socket.join(roomName);
+        console.log(` Socket ${socket.id} เข้าร่วมห้อง: ${roomName}`);
+    });
+});
+
+app.post("/api/table/update_table_rep", checkAccessToken, async (req, res) => {
+    try {
+
+        const tableNumber = req.body.tableNumber;
+        const table_request_id = req.body.table_request_id;
+
+
+
+        let result = await tablereq.updatetablereq(tableNumber, table_request_id);
+
+        if (result.isError) {
+            return res.status(400).json(result);
+        }
+
+        const roomName = `table_${String(tableNumber).trim()}`;
+
+        const room = io.sockets.adapter.rooms.get(roomName);
+        const clientCount = room ? room.size : 0;
+        console.log(` ยิงสัญญาณไปห้อง [${roomName}] -> มีเครื่องรออยู่: ${clientCount} เครื่อง`);
+
+        io.to(roomName).emit("table_approved", {
+            table_number: tableNumber,
+            status: "APPROVED"
+        });
+        
+        io.emit("new_table_request", {
+            table_number: tableNumber,
+        });
+
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ isError: true, errorMessage: err.message });
+    }
+});
+
+app.post("/api/table/cancel_table_rep", checkAccessToken, async (req, res) => {
+    try {
+        const tableNumber = req.body.tableNumber;
+        const table_request_id = req.body.table_request_id;
+
+        let result = await tablereq.canceltablereq(tableNumber, table_request_id);
+
+        if (result.isError) {
+            return res.status(400).json(result);
+        }
+
+        const roomName = `table_${String(tableNumber).trim()}`;
+        const room = io.sockets.adapter.rooms.get(roomName);
+        const clientCount = room ? room.size : 0;
+        console.log(` ยิงสัญญาณยกเลิกไปห้อง [${roomName}] -> มีเครื่องรออยู่: ${clientCount} เครื่อง`);
+
+        io.to(roomName).emit("table_rejected", {
+            table_number: tableNumber,
+            status: "REJECTED",
+            message: "คำขอเปิดโต๊ะถูกปฏิเสธ กรุณาติดต่อพนักงาน"
+        });
+
+        io.emit("new_table_request", {
+            table_number: tableNumber,
+        });
+
+
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ isError: true, errorMessage: err.message });
+    }
+});
+
+//ลูกค้า
+
+
+app.post("/api/table/table_request", async (req, res) => {
+    console.log(req.body.authen_request)
+    const authenRequest = req.body.authen_request;
+    const result = await table_check.checktableRequest(authenRequest);
+    console.log(result);
+
+    let response;
+
+    if (result.isError) {
+        response = { isError: true, data: "", errorMessage: result.errorMessage };
+    } else {
+        var payload = { table_number: result.data[0].table_number }
+        const authenToken = jwt.sign(payload);
+        response = {
+            isError: false,
+            data: authenToken,
+            errorMessage: ""
+        }
+    }
+    res.send(JSON.stringify(response));
+}); 
+
+
+app.post("/api/table/access_request", async (req, res) => {
+    const authenToken = req.body.authen_token;
+
+    var decoded = await jwt.verify(authenToken).catch(() => null);
+
+    let response;
+
+    if (decoded && decoded.table_number) {
+        const result = await table_check.checkAccesRequest(decoded.table_number);
+        console.log(result);
+
+        if (result.isError) {
+            response = { isError: true, data: "", errorMessage: result.errorMessage };
+        } else {
+            var payload = {
+                table_number: result.data[0].table_number,
+                table_status_id: result.data[0].table_status_id,
+                date: dateUtils.getCurrentDateForToken()
+            };
+
+            const accessToken = jwt.sign(payload);
+            response = {
+                isError: false,
+                data: {
+                    access_token: accessToken,
+                },
+                errorMessage: ""
+            }
+        }
+    } else {
+        response = {
+            isError: true,
+            data: "",
+            errorMessage: "ข้อมูลไม่ถูกต้อง"
+        };
+    }
+    res.send(JSON.stringify(response));
+});
+
+app.post("/api/table/cus-req-table",checkAccessTokencus, async (req, res) => {
+    try {
+       const { table_number } = req.body;
+        
+        const result = await tablereqcus.reqtable(
+            table_number
+        );
+
+        io.emit("new_table_request", {
+            table_number: table_number,
+        });
+
+        if (result.isError) {
+            return res.status(400).json(result);
+        }
+        return res.status(200).json(result);
+    } catch (err) {
+        console.error("Error req:", err);
+        return res.status(500).json({
+            isError: true,
+            data: null,
+            errorMessage: err.message
+        });
+    }
+});
+
+app.get("/api/menu/menu",checkAccessTokencus, async (req, res) => {
+    try {
+        console.log("menu/menu");
+        console.log(req.decoded);
+
+        const result = await menu.getmenuList();
+        res.json(result);
+    }
+    catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: [],
+            errorMessage: err.message
+        });
+    }
+});
 
 
 app.get("/api/test", async (req, res) => {
     console.log("5555");
     res.json({ message: "5555" });
 });
-app.listen(port, hostname, () => {
-    console.log(`Server running at port ${port}`);
+
+
+server.listen(port, hostname, () => {
+    console.log(`Server & Socket.IO running at port ${port}`);
 });
