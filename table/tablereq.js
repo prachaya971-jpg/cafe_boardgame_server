@@ -74,7 +74,7 @@ module.exports = {
         return result;
     }
 },
-updatetablereq: async (tableId, table_request_id) => {
+updatetablereq: async (tableId, table_request_id, emp_id) => {
     let conn;
     let result;
     try {
@@ -87,6 +87,14 @@ updatetablereq: async (tableId, table_request_id) => {
         `;
         await conn.query(sql, [tableId]);
 
+         const sql2 = `
+           INSERT INTO \`order\` 
+            (table_number, date_time, order_status_id, total_price, emp_id) 
+            VALUES 
+            (?, NOW(), 'N', 0.00, ?)
+        `;
+        await conn.query(sql2, [tableId,emp_id]);
+
         const sql1 = `
             UPDATE table_request 
             SET table_req_status_id = 'Y' 
@@ -94,6 +102,8 @@ updatetablereq: async (tableId, table_request_id) => {
         `;
        
         const res = await conn.query(sql1, [tableId, table_request_id]);
+
+       
 
         const affected = Number(res.affectedRows || 0);
 

@@ -646,6 +646,9 @@ app.post("/api/order/update-order-server", checkAccessToken, async (req, res) =>
 
         let result = await order.updateorderserver(orderDetailId, orderstatus);
 
+        io.emit("new_order", {
+        });
+
         if (result.isError) {
             return res.status(400).json(result);
         }
@@ -1320,15 +1323,16 @@ io.on('connection', (socket) => {
     });
 });
 
-app.post("/api/table/update_table_rep", checkAccessToken, async (req, res) => {
+app.post("/api/table/update_table_rep",checkAccessToken, async (req, res) => {
     try {
 
         const tableNumber = req.body.tableNumber;
         const table_request_id = req.body.table_request_id;
+        const emp_id = req.body.emp_id;
 
 
 
-        let result = await tablereq.updatetablereq(tableNumber, table_request_id);
+        let result = await tablereq.updatetablereq(tableNumber, table_request_id,emp_id);
 
         if (result.isError) {
             return res.status(400).json(result);
@@ -1496,11 +1500,86 @@ app.get("/api/menu/menu",checkAccessTokencus, async (req, res) => {
     }
 });
 
+app.get("/api/menu/menubyid", async (req, res) => {
+    try {
+
+        //console.log("menu/menu");
+        //console.log(req.decoded);
+       const foodvarianid = req.query.id;
+
+        const result = await menu.getmenuListByid(foodvarianid);
+        res.json(result);
+    }
+    catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: [],
+            errorMessage: err.message
+        });
+    }
+});
+
+app.get("/api/menu/menuoptionbyid", async (req, res) => {
+    try {
+
+        //console.log("menu/menu");
+        //console.log(req.decoded);
+       const foodvarianid = req.query.id;
+
+        const result = await menu.getmenuoptionByid(foodvarianid);
+        res.json(result);
+    }
+    catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: [],
+            errorMessage: err.message
+        });
+    }
+});
+
+app.post('/api/menu/reqorder', async (req, res) => {
+    try {
+        const { table_number, base_price, quantity, food_variant_id, options } = req.body;
+
+       
+        const result = await menu.reqorder({
+            table_number,
+            base_price,
+            quantity,
+            food_variant_id,
+            options: options || []
+        });
+
+        io.emit("new_order", {
+            table_number: table_number,
+        });
+
+        if (result.isError) {
+            return res.status(400).json(result);
+        }
+
+        return res.status(200).json({
+            isError: false,
+            data: result.data,
+            errorMessage: ""
+        });
+
+    } catch (err) {
+        return res.status(500).json({
+            isError: true,
+            data: null,
+            errorMessage: err.message
+        });
+    }
+});
 
 app.get("/api/test", async (req, res) => {
     console.log("5555");
     res.json({ message: "5555" });
 });
+
+
 
 
 server.listen(port, hostname, () => {

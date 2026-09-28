@@ -185,3 +185,35 @@ Content-Type: application/json
 POST http://localhost:3000/api/table/access_request
 ###
 GET http://192.168.1.4:3000/api/menu/menu
+###
+GET http://192.168.1.4:3000/api/menu/menubyid?id=1
+Content-Type: application/json
+
+####
+
+GET http://192.168.1.4:3000/api/menu/menuoptionbyid?id=1
+Content-Type: application/json
+###
+
+POST http://localhost:3000/api/table/update_table_rep
+Content-Type: application/json
+
+{
+  "tableNumber": 1,
+  "table_request_id": 126,
+  "emp_id": 1
+}
+###
+POST http://localhost:3000/api/menu/reqorder
+Content-Type: application/json
+
+{
+  "table_number": "1",
+  "food_variant_id": 2,
+  "base_price": "50.00",
+  "quantity": 1,
+  "options": [
+    { "options_id": 1 },
+    { "options_id": 2 }
+  ]
+}
