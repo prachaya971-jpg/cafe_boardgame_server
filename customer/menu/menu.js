@@ -92,7 +92,7 @@ module.exports = {
         let conn;
         let result = { isError: false, data: null, errorMessage: "" };
         try {
-            const { table_number, base_price, quantity, food_variant_id, options } = orderData;
+            const { table_number, base_price, quantity, food_variant_id, name, drive_id, options } = orderData;
 
             conn = await pool.getConnection();
             await conn.beginTransaction();
@@ -122,14 +122,16 @@ module.exports = {
 
             const sqlInsertFood = `
             INSERT INTO order_food 
-            (order_id, base_price, date_time, quantity, food_variant_id, serve_status_id, pay_status_id)
-            VALUES (?, ?, NOW(), ?, ?, 'N', 'N')
+            (order_id, base_price, date_time, quantity, food_variant_id, serve_status_id, pay_status_id,device_id,name)
+            VALUES (?, ?, NOW(), ?, ?, 'N', 'N', ?, ?)
         `;
             const resFood = await conn.query(sqlInsertFood, [
                 currentOrderId,
                 base_price,
                 quantity,
-                food_variant_id
+                food_variant_id,
+                drive_id,
+                name
             ]);
 
             const orderDetailId = Number(resFood.insertId);
@@ -167,4 +169,139 @@ module.exports = {
             return result;
         }
     },
+    getordercusByid: async (device_id,table_number) => {
+        let conn;
+        let result;
+        try {
+            conn = await pool.getConnection();
+            const sql = `
+                SELECT * FROM v_orber_byid WHERE device_id = ? AND table_number = ?;
+            `;
+            const rows = await conn.query(sql, [device_id,table_number]);
+            result = {
+                isError: false,
+                data: rows,
+                errorMessage: ""
+            };
+        } catch (error) {
+            result = {
+                isError: true,
+                data: [],
+                errorMessage: error.message
+            };
+        } finally {
+            if (conn)
+                conn.release();
+
+            return result;
+        }
+
+    },
+
+    getordercusoptionByid: async (orderDetailId) => {
+        let conn;
+        let result;
+        try {
+            conn = await pool.getConnection();
+            const sql = `
+                SELECT * FROM v_cus_option WHERE order_detail_id = ?;
+            `;
+            const rows = await conn.query(sql, [orderDetailId]);
+            result = {
+                isError: false,
+                data: rows,
+                errorMessage: ""
+            };
+        } catch (error) {
+            result = {
+                isError: true,
+                data: [],
+                errorMessage: error.message
+            };
+        } finally {
+            if (conn)
+                conn.release();
+
+            return result;
+        }
+
+    },
+    getordercusdetailByid: async (orderDetailId) => {
+        let conn;
+        let result;
+        try {
+            conn = await pool.getConnection();
+            const sql = `
+                SELECT * FROM v_orber_byid WHERE order_detail_id = ?;
+            `;
+            
+            const rows = await conn.query(sql, [orderDetailId]);
+            result = {
+                isError: false,
+                data: rows,
+                errorMessage: ""
+            };
+        } catch (error) {
+            result = {
+                isError: true,
+                data: [],
+                errorMessage: error.message
+            };
+        } finally {
+            if (conn)
+                conn.release();
+
+            return result;
+        }
+
+    },
+
+    cancelorderservercus: async (orderDetailId) => {
+        let conn;
+        let result;
+        try {
+            conn = await pool.getConnection();
+
+           
+            const sql = `
+            UPDATE order_food 
+            SET serve_status_id = 'C',
+            pay_status_id = 'C' 
+            WHERE order_detail_id = ?
+        `;
+
+            const res = await conn.query(sql, [orderDetailId]);
+
+
+            const affectedRows = res.affectedRows ?? res[0]?.affectedRows ?? 0;
+
+            if (affectedRows === 0) {
+                result = {
+                    isError: true,
+                    data: null,
+                    errorMessage: ""
+                };
+            } else {
+                result = {
+                    isError: false,
+                    data: {
+                        affectedRows: Number(affectedRows),
+                        orderDetailId: orderDetailId
+                    },
+                    errorMessage: ""
+                };
+            }
+        } catch (error) {
+            result = {
+                isError: true,
+                data: null,
+                errorMessage: error.message
+            };
+        } finally {
+            if (conn) conn.release();
+        }
+
+        return result;
+    },
+
 }

@@ -662,6 +662,31 @@ app.post("/api/order/update-order-server", checkAccessToken, async (req, res) =>
     }
 });
 
+app.post("/api/order/cancel-order",checkAccessToken, async (req, res) => {
+    try {
+        console.log("order/cancel-order");
+        console.log(req.decoded);
+
+        const { orderDetailId } = req.body;
+
+        let result = await order.cancelorderserver(orderDetailId);
+
+        io.emit("new_order", {
+        });
+
+        if (result.isError) {
+            return res.status(400).json(result);
+        }
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: null,
+            errorMessage: err.message
+        });
+    }
+});
+
 app.get("/api/advice/advice-list", checkAccessToken, async (req, res) => {
     try {
 
@@ -1540,7 +1565,7 @@ app.get("/api/menu/menuoptionbyid", async (req, res) => {
 
 app.post('/api/menu/reqorder', async (req, res) => {
     try {
-        const { table_number, base_price, quantity, food_variant_id, options } = req.body;
+        const { table_number, base_price, quantity, food_variant_id, name, drive_id, options } = req.body;
 
        
         const result = await menu.reqorder({
@@ -1548,6 +1573,8 @@ app.post('/api/menu/reqorder', async (req, res) => {
             base_price,
             quantity,
             food_variant_id,
+            name,
+            drive_id,
             options: options || []
         });
 
@@ -1567,6 +1594,89 @@ app.post('/api/menu/reqorder', async (req, res) => {
 
     } catch (err) {
         return res.status(500).json({
+            isError: true,
+            data: null,
+            errorMessage: err.message
+        });
+    }
+});
+
+app.get("/api/menu/orderbyid", async (req, res) => {
+    try {
+
+        //console.log("menu/menu");
+        //console.log(req.decoded);
+       const drive_id = req.query.id;
+       const table_number = req.query.table_number;
+
+        const result = await menu.getordercusByid(drive_id,table_number);
+        res.json(result);
+    }
+    catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: [],
+            errorMessage: err.message
+        });
+    }
+});
+
+app.get("/api/menu/orderdetailbyid", async (req, res) => {
+    try {
+
+        //console.log("menu/menu");
+        //console.log(req.decoded);
+       const orderDetailId = req.query.id;
+
+        const result = await menu.getordercusdetailByid(orderDetailId);
+        res.json(result);
+    }
+    catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: [],
+            errorMessage: err.message
+        });
+    }
+});
+
+app.get("/api/menu/orderoptionbyid", async (req, res) => {
+    try {
+
+        //console.log("menu/menu");
+        //console.log(req.decoded);
+       const orderDetailId = req.query.id;
+
+        const result = await menu.getordercusoptionByid(orderDetailId);
+        res.json(result);
+    }
+    catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: [],
+            errorMessage: err.message
+        });
+    }
+});
+
+app.post("/api/menu/cancel-cus-order", async (req, res) => {
+    try {
+        //console.log("order/cancel-order");
+        //console.log(req.decoded);
+
+        const { orderDetailId } = req.body;
+
+        let result = await menu.cancelorderservercus(orderDetailId);
+
+        io.emit("new_order", {
+        });
+
+        if (result.isError) {
+            return res.status(400).json(result);
+        }
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
             isError: true,
             data: null,
             errorMessage: err.message

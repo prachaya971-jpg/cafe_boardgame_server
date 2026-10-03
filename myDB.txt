@@ -654,18 +654,20 @@ ALTER TABLE `food_variants`
 DELIMITER $$
 
 -- ========================================================
--- 1. เคลียร์ TRIGGER เก่าทิ้งทั้งหมดเพื่อป้องกัน Error ซ้ำซ้อน
+-- 1. เคลียร์ TRIGGER เก่าทิ้งทั้งหมด 5 ตัว
 -- ========================================================
 DROP TRIGGER IF EXISTS `trg_after_order_food_insert`$$
 DROP TRIGGER IF EXISTS `trg_after_order_food_update`$$
 DROP TRIGGER IF EXISTS `trg_after_order_food_delete`$$
+DROP TRIGGER IF EXISTS `trg_after_order_food_options_insert`$$
+DROP TRIGGER IF EXISTS `trg_after_order_food_options_delete`$$
 
 
 -- ========================================================
--- 2. TRIGGER สำหรับตารางหลัก: order_food (เพิ่ม / แก้ไข / ลบ จานอาหาร)
+-- 2. TRIGGER สำหรับตารางหลัก: order_food
 -- ========================================================
 
--- 2.1 เมื่อสั่งอาหารจานใหม่ (AFTER INSERT)
+-- 2.1 เพิ่มจานอาหารใหม่
 CREATE TRIGGER `trg_after_order_food_insert`
 AFTER INSERT ON `order_food`
 FOR EACH ROW
@@ -681,11 +683,12 @@ BEGIN
             GROUP BY ofo.order_detail_id
         ) opt ON of.order_detail_id = opt.order_detail_id
         WHERE of.order_id = NEW.order_id
+          AND of.serve_status_id != 'R' -- 👈 ตัดจานที่ถูกยกเลิก/ปฏิเสธออก
     )
     WHERE o.order_id = NEW.order_id;
 END$$
 
--- 2.2 เมื่อแก้ไขจำนวนชิ้น หรือราคาอาหาร (AFTER UPDATE)
+-- 2.2 เมื่อแก้ไขจำนวน, ราคา หรือกดยกเลิก/ปฏิเสธ (เปลี่ยน item_status)
 CREATE TRIGGER `trg_after_order_food_update`
 AFTER UPDATE ON `order_food`
 FOR EACH ROW
@@ -701,11 +704,12 @@ BEGIN
             GROUP BY ofo.order_detail_id
         ) opt ON of.order_detail_id = opt.order_detail_id
         WHERE of.order_id = NEW.order_id
+          AND of.serve_status_id != 'R' -- 👈 เมื่อ UPDATE สถานะเป็น CANCELLED ยอดจะลดลงทันที
     )
     WHERE o.order_id = NEW.order_id;
 END$$
 
--- 2.3 เมื่อยกเลิกหรือลบรายการอาหาร (AFTER DELETE)
+-- 2.3 เมื่อลบรายการทิ้ง
 CREATE TRIGGER `trg_after_order_food_delete`
 AFTER DELETE ON `order_food`
 FOR EACH ROW
@@ -721,19 +725,24 @@ BEGIN
             GROUP BY ofo.order_detail_id
         ) opt ON of.order_detail_id = opt.order_detail_id
         WHERE of.order_id = OLD.order_id
+          AND of.serve_status_id != 'R'
     )
     WHERE o.order_id = OLD.order_id;
 END$$
 
+
 -- ========================================================
--- 3. TRIGGER สำหรับตารางลูก: order_food_options (เพิ่ม / ลบ Option เสริม)
+-- 3. TRIGGER สำหรับตารางลูก: order_food_options
 -- ========================================================
 
--- 3.1 เมื่อเพิ่ม Option ลงในจานอาหาร (AFTER INSERT)
+-- 3.1 เพิ่ม Option เสริม
 CREATE TRIGGER `trg_after_order_food_options_insert`
 AFTER INSERT ON `order_food_options`
 FOR EACH ROW
 BEGIN
+    DECLARE target_order_id INT;
+    SELECT order_id INTO target_order_id FROM order_food WHERE order_detail_id = NEW.order_detail_id LIMIT 1;
+
     UPDATE `order` o
     SET o.total_price = (
         SELECT IFNULL(SUM((of.base_price + IFNULL(opt.total_opt_price, 0)) * of.quantity), 0)
@@ -744,16 +753,20 @@ BEGIN
             JOIN food_options fo ON ofo.options_id = fo.options_id
             GROUP BY ofo.order_detail_id
         ) opt ON of.order_detail_id = opt.order_detail_id
-        WHERE of.order_id = (SELECT order_id FROM order_food WHERE order_detail_id = NEW.order_detail_id)
+        WHERE of.order_id = target_order_id
+          AND of.serve_status_id != 'R'
     )
-    WHERE o.order_id = (SELECT order_id FROM order_food WHERE order_detail_id = NEW.order_detail_id);
+    WHERE o.order_id = target_order_id;
 END$$
 
--- 3.2 เมื่อลบ Option ออกจากจานอาหาร (AFTER DELETE)
+-- 3.2 ลบ Option เสริม
 CREATE TRIGGER `trg_after_order_food_options_delete`
 AFTER DELETE ON `order_food_options`
 FOR EACH ROW
 BEGIN
+    DECLARE target_order_id INT;
+    SELECT order_id INTO target_order_id FROM order_food WHERE order_detail_id = OLD.order_detail_id LIMIT 1;
+
     UPDATE `order` o
     SET o.total_price = (
         SELECT IFNULL(SUM((of.base_price + IFNULL(opt.total_opt_price, 0)) * of.quantity), 0)
@@ -764,9 +777,14 @@ BEGIN
             JOIN food_options fo ON ofo.options_id = fo.options_id
             GROUP BY ofo.order_detail_id
         ) opt ON of.order_detail_id = opt.order_detail_id
-        WHERE of.order_id = (SELECT order_id FROM order_food WHERE order_detail_id = OLD.order_detail_id)
+        WHERE of.order_id = target_order_id
+          AND of.serve_status_id != 'R'
     )
-    WHERE o.order_id = (SELECT order_id FROM order_food WHERE order_detail_id = OLD.order_detail_id);
+    WHERE o.order_id = target_order_id;
 END$$
 
 DELIMITER ;
+
+ALTER TABLE `order_food`
+	ADD COLUMN `device_id` VARCHAR(50) NULL DEFAULT NULL AFTER `pay_status_id`,
+	ADD COLUMN `name` VARCHAR(50) NULL DEFAULT NULL AFTER `device_id`;

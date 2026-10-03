@@ -217,3 +217,22 @@ Content-Type: application/json
     { "options_id": 2 }
   ]
 }
+###
+
+GET http://192.168.1.4:3000/api/menu/orderbyid?id=e73b1ad4-c3c1-428c-aaa0-da7978e3f543&table_number=1
+Content-Type: application/json
+###
+POST  http://192.168.1.4:3000/api/order/cancel-order
+Content-Type: application/json
+
+{
+  "orderDetailId": 46
+}
+###
+
+GET http://192.168.1.4:3000/api/menu/orderoptionbyid?id=45
+Content-Type: application/json
+###
+
+GET http://192.168.1.4:3000/api/menu/orderdetailbyid?id=45
+Content-Type: application/json

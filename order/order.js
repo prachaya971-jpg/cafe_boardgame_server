@@ -88,4 +88,51 @@ module.exports = {
 
         return result;
     },
+    cancelorderserver: async (orderDetailId) => {
+        let conn;
+        let result;
+        try {
+            conn = await pool.getConnection();
+
+           
+            const sql = `
+            UPDATE order_food 
+            SET serve_status_id = 'R',
+            pay_status_id = 'R' 
+            WHERE order_detail_id = ?
+        `;
+
+            const res = await conn.query(sql, [orderDetailId]);
+
+
+            const affectedRows = res.affectedRows ?? res[0]?.affectedRows ?? 0;
+
+            if (affectedRows === 0) {
+                result = {
+                    isError: true,
+                    data: null,
+                    errorMessage: ""
+                };
+            } else {
+                result = {
+                    isError: false,
+                    data: {
+                        affectedRows: Number(affectedRows),
+                        orderDetailId: orderDetailId
+                    },
+                    errorMessage: ""
+                };
+            }
+        } catch (error) {
+            result = {
+                isError: true,
+                data: null,
+                errorMessage: error.message
+            };
+        } finally {
+            if (conn) conn.release();
+        }
+
+        return result;
+    },
 }
