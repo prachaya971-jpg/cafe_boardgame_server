@@ -27,6 +27,7 @@ const tablecheckModel = require('./tablecus/table_check.js');
 const tablereq = require('./table/tablereq.js');
 const tablereqcus = require('./tablecus/table_req_cus.js');
 const menu = require('./customer/menu/menu.js');
+const boardgame = require('./customer/boardgame/boardgame.js');
 const { Server } = require('socket.io');
 const app = express();
 const server = http.createServer(app);
@@ -1525,7 +1526,7 @@ app.get("/api/menu/menu",checkAccessTokencus, async (req, res) => {
     }
 });
 
-app.get("/api/menu/menubyid", async (req, res) => {
+app.get("/api/menu/menubyid",checkAccessTokencus, async (req, res) => {
     try {
 
         //console.log("menu/menu");
@@ -1544,7 +1545,7 @@ app.get("/api/menu/menubyid", async (req, res) => {
     }
 });
 
-app.get("/api/menu/menuoptionbyid", async (req, res) => {
+app.get("/api/menu/menuoptionbyid",checkAccessTokencus, async (req, res) => {
     try {
 
         //console.log("menu/menu");
@@ -1563,7 +1564,7 @@ app.get("/api/menu/menuoptionbyid", async (req, res) => {
     }
 });
 
-app.post('/api/menu/reqorder', async (req, res) => {
+app.post('/api/menu/reqorder',checkAccessTokencus, async (req, res) => {
     try {
         const { table_number, base_price, quantity, food_variant_id, name, drive_id, options } = req.body;
 
@@ -1601,7 +1602,7 @@ app.post('/api/menu/reqorder', async (req, res) => {
     }
 });
 
-app.get("/api/menu/orderbyid", async (req, res) => {
+app.get("/api/menu/orderbyid",checkAccessTokencus, async (req, res) => {
     try {
 
         //console.log("menu/menu");
@@ -1621,7 +1622,7 @@ app.get("/api/menu/orderbyid", async (req, res) => {
     }
 });
 
-app.get("/api/menu/orderdetailbyid", async (req, res) => {
+app.get("/api/menu/orderdetailbyid",checkAccessTokencus, async (req, res) => {
     try {
 
         //console.log("menu/menu");
@@ -1640,7 +1641,7 @@ app.get("/api/menu/orderdetailbyid", async (req, res) => {
     }
 });
 
-app.get("/api/menu/orderoptionbyid", async (req, res) => {
+app.get("/api/menu/orderoptionbyid",checkAccessTokencus, async (req, res) => {
     try {
 
         //console.log("menu/menu");
@@ -1659,7 +1660,7 @@ app.get("/api/menu/orderoptionbyid", async (req, res) => {
     }
 });
 
-app.post("/api/menu/cancel-cus-order", async (req, res) => {
+app.post("/api/menu/cancel-cus-order",checkAccessTokencus, async (req, res) => {
     try {
         //console.log("order/cancel-order");
         //console.log(req.decoded);
@@ -1684,12 +1685,46 @@ app.post("/api/menu/cancel-cus-order", async (req, res) => {
     }
 });
 
+
+
+app.get("/api/boardgame/play",checkAccessTokencus, async (req, res) => {
+    try {
+        //console.log("menu/menu");
+        //console.log(req.decoded);
+
+        const result = await boardgame.getplayList();
+        res.json(result);
+    }
+    catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: [],
+            errorMessage: err.message
+        });
+    }
+});
+
+app.get("/api/boardgame/sale",checkAccessTokencus, async (req, res) => {
+    try {
+        //console.log("menu/menu");
+        //console.log(req.decoded);
+
+        const result = await boardgame.getsaleList();
+        res.json(result);
+    }
+    catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: [],
+            errorMessage: err.message
+        });
+    }
+});
+
 app.get("/api/test", async (req, res) => {
     console.log("5555");
     res.json({ message: "5555" });
 });
-
-
 
 
 server.listen(port, hostname, () => {

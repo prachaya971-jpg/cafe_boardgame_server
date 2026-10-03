@@ -236,3 +236,14 @@ Content-Type: application/json
 
 GET http://192.168.1.4:3000/api/menu/orderdetailbyid?id=45
 Content-Type: application/json
+
+
+###
+
+GET http://192.168.1.4:3000/api/boardgame/sale
+Content-Type: application/json
+
+###
+GET http://192.168.1.4:3000/api/boardgame/play
+Content-Type: application/json
+
