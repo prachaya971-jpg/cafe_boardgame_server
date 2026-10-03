@@ -73,7 +73,7 @@ module.exports = {
             conn = await pool.getConnection();
 
             var sql =  `
-                    SELECT emp_id, user_id, emp_first_name, emp_last_name, tel, emp_role_id, age, sex
+                    SELECT emp_id, user_id, emp_first_name, emp_last_name, tel, emp_role_id, age, sex, password_status_id
                     FROM employee 
                     WHERE LOWER(SHA2(CONCAT(TRIM(user_id), '&', TRIM(password), '&', ?), 256)) = ? 
                         `;

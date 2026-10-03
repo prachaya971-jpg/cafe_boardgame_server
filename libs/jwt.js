@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const secretKey = "MySecretKey";
+const secretKeycus = "CusSecretKey";
 
 module.exports = {
     sign(payload) {
@@ -18,5 +19,5 @@ module.exports = {
                 }
             });
         });
-    }
+    },
 };

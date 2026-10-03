@@ -41,13 +41,6 @@ module.exports = {
         try {
             const { variant_id, variant_name } = variantData;
 
-            if (!variant_id || !variant_name || variant_name.trim() === "") {
-                return {
-                    isError: true,
-                    data: null,
-                    errorMessage: ""
-                };
-            }
 
             conn = await pool.getConnection();
             const sql = "UPDATE variants SET variant_name = ? WHERE variant_id = ?";
@@ -83,13 +76,6 @@ module.exports = {
         let conn;
         let result;
         try {
-            if (!variant_id) {
-                return {
-                    isError: true,
-                    data: null,
-                    errorMessage: ""
-                };
-            }
 
             conn = await pool.getConnection();
             const sql = "DELETE FROM variants WHERE variant_id = ?";
