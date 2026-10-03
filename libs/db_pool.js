@@ -3,7 +3,7 @@ const pool =mariadb.createPool({
     host:'localhost',
     user:'root',
     password: '888',
-    port: 3306,
+    port: 8080,
     connectionLimit:5,
     
 
