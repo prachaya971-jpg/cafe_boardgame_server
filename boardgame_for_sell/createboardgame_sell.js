@@ -36,7 +36,7 @@ module.exports = {
 
             if (ArrayCategoryId.length > 0) {
                 const catagory_bg_id_save = ArrayCategoryId.map(() => "(?, ?)").join(", ");
-                const bg_tag_save = `INSERT INTO catagory_tag_bgs_id (bg_id, catagory_bg_id) VALUES ${catagory_bg_id_save}`;
+                const bg_tag_save = `INSERT INTO sale_catagory_tag_id (bg_id, catagory_bg_id) VALUES ${catagory_bg_id_save}`;
 
                 const tagValues = ArrayCategoryId.flatMap(typeid => [bgid, Number(typeid)]);
 

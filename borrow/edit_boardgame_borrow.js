@@ -18,8 +18,6 @@ module.exports = {
                             LEFT JOIN catagory_board_game cbg ON cbg.catagory_bg_id = bgpt.catagory_bg_id
                     GROUP BY bgp.bgp_id 
             `;
-
-            // boardgame_borrow_name, boardgame_borrow_quantity, borrow_img, catagory_id
             const rows = await conn.query(sql);
             result = {
                 isError: false,
@@ -37,14 +35,27 @@ module.exports = {
             return result;
         }
     },
-    //
-    updateType: async (typeData) => {
+    // แก้ไขบอร์ดเกมสำหรับยืม
+    updatebgborrow: async (boardgame_borrow) => {
         let conn;
         let result;
         try {
-            const { boardgame_type_id, boardgame_type_name } = typeData;
+            const { boardgameplay_id, boardgame_borrow_quantity, boardgameplay_name, borrow_img, catagory_id } = boardgame_borrow;
 
-            if (!boardgame_type_id || !boardgame_type_name || boardgame_type_name.trim() === "") {
+            let ArrayCategoryId = [];
+            if (catagory_id) {
+                if (typeof catagory_id === 'string') {
+                    try {
+                        ArrayCategoryId = JSON.parse(catagory_id);
+                    } catch (e) {
+                        ArrayCategoryId = catagory_id.split(',').map(id => id.trim()).filter(Boolean);
+                    }
+                } else if (Array.isArray(catagory_id)) {
+                    ArrayCategoryId = catagory_id;
+                }
+            }
+
+            if (!boardgameplay_id || !boardgameplay_name || boardgameplay_name.trim() === "") {
                 return {
                     isError: true,
                     data: null,
@@ -53,8 +64,24 @@ module.exports = {
             }
 
             conn = await pool.getConnection();
-            const sql = "UPDATE catagory_board_game SET catagory_bg_name = ? WHERE catagory_bg_id = ?";
-            const res = await conn.query(sql, [boardgame_type_name.trim(), boardgame_type_id]);
+            const sql001 = "UPDATE board_game_play SET bgp_name = ?, quantity = ? WHERE bgp_id = ?";
+            const res = await conn.query(sql001, [boardgameplay_name.trim(), boardgame_borrow_quantity, boardgameplay_id]);
+
+            if (borrow_img && borrow_img.trim() !== "") {
+            const sql002 ="UPDATE board_game_play SET img_game_play = ? WHERE bgp_id = ?";
+            await conn.query(sql002, [borrow_img, boardgameplay_id]);
+            }
+            
+            const sql003 = "DELETE FROM play_catagory_tag_id WHERE bgp_id = ?;";
+            await conn.query(sql003, [boardgameplay_id]);
+
+            if (ArrayCategoryId.length > 0) {
+                const catagory_bg_id_save = ArrayCategoryId.map(() => "(?, ?)").join(", ");
+                const bg_tag_save = `INSERT INTO play_catagory_tag_id (bgp_id, catagory_bg_id) VALUES ${catagory_bg_id_save}`;
+                const tagValues = ArrayCategoryId.flatMap(typeid => [boardgameplay_id, Number(typeid)]);
+
+                await conn.query(bg_tag_save, tagValues);
+            }
 
             if (res.affectedRows === 0) {
                 return {
@@ -97,15 +124,14 @@ module.exports = {
             conn = await pool.getConnection();
             const sql001 = `DELETE FROM play_catagory_tag_id 
                             WHERE bgp_id = ?;`;
-         
+
             const sql002 = `DELETE FROM board_game_play 
                             WHERE bgp_id = ?;`;
 
             await conn.query(sql001, [bgp_id]);
             await conn.query(sql002, [bgp_id]);
-            // const res888 = await conn.query(sql002, [bgp_id]);
             await conn.commit();
-            
+
 
             result = {
                 isError: false,

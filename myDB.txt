@@ -665,3 +665,22 @@ ALTER TABLE `food_variants`
 	ADD COLUMN `food_status_id` VARCHAR(1) NULL DEFAULT NULL AFTER `variant_id`,
 	ADD CONSTRAINT `FK_food_variants_food_status` FOREIGN KEY (`food_status_id`) REFERENCES `food_status` (`food_status_id`) ON UPDATE NO ACTION ON DELETE NO ACTION;
 
+
+
+
+
+
+---------------------------
+
+CREATE TABLE `bgs_barcode` (
+	`bgs_barcode_id` INT(11) NOT NULL AUTO_INCREMENT,
+	`bgs_barcode_number` VARCHAR(20) NULL DEFAULT NULL COLLATE 'utf8mb4_thai_520_w2',
+	`bg_id` INT(11) NULL DEFAULT NULL,
+	PRIMARY KEY (`bgs_barcode_id`) USING BTREE,
+	INDEX `FK__board_game_sale` (`bg_id`) USING BTREE,
+	CONSTRAINT `FK__board_game_sale` FOREIGN KEY (`bg_id`) REFERENCES `board_game_sale` (`bg_id`) ON UPDATE NO ACTION ON DELETE NO ACTION
+)
+COLLATE='utf8mb4_thai_520_w2'
+ENGINE=InnoDB
+AUTO_INCREMENT=114
+;
