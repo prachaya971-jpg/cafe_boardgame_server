@@ -683,7 +683,7 @@ BEGIN
             GROUP BY ofo.order_detail_id
         ) opt ON of.order_detail_id = opt.order_detail_id
         WHERE of.order_id = NEW.order_id
-          AND of.serve_status_id != 'R' -- 👈 ตัดจานที่ถูกยกเลิก/ปฏิเสธออก
+          AND of.serve_status_id NOT IN ('R', 'C')
     )
     WHERE o.order_id = NEW.order_id;
 END$$
@@ -704,7 +704,7 @@ BEGIN
             GROUP BY ofo.order_detail_id
         ) opt ON of.order_detail_id = opt.order_detail_id
         WHERE of.order_id = NEW.order_id
-          AND of.serve_status_id != 'R' -- 👈 เมื่อ UPDATE สถานะเป็น CANCELLED ยอดจะลดลงทันที
+          AND of.serve_status_id NOT IN ('R', 'C')
     )
     WHERE o.order_id = NEW.order_id;
 END$$
@@ -725,7 +725,7 @@ BEGIN
             GROUP BY ofo.order_detail_id
         ) opt ON of.order_detail_id = opt.order_detail_id
         WHERE of.order_id = OLD.order_id
-          AND of.serve_status_id != 'R'
+          AND of.serve_status_id NOT IN ('R', 'C')
     )
     WHERE o.order_id = OLD.order_id;
 END$$
@@ -754,7 +754,7 @@ BEGIN
             GROUP BY ofo.order_detail_id
         ) opt ON of.order_detail_id = opt.order_detail_id
         WHERE of.order_id = target_order_id
-          AND of.serve_status_id != 'R'
+          AND of.serve_status_id NOT IN ('R', 'C')
     )
     WHERE o.order_id = target_order_id;
 END$$
@@ -778,7 +778,7 @@ BEGIN
             GROUP BY ofo.order_detail_id
         ) opt ON of.order_detail_id = opt.order_detail_id
         WHERE of.order_id = target_order_id
-          AND of.serve_status_id != 'R'
+          AND of.serve_status_id NOT IN ('R', 'C')
     )
     WHERE o.order_id = target_order_id;
 END$$
