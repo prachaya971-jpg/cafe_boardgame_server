@@ -9,7 +9,7 @@ module.exports = {
         let result;
         try {
             conn = await pool.getConnection();
-            const { boardgame_sell_name, boardgame_sell_quantity, boardgame_sell_price, boardgame_sell_img, catagory_id, boardgame_sell_barcode } = boardgame_sell;
+            const { boardgame_sell_name, boardgame_sell_price, boardgame_sell_img, catagory_id, boardgame_sell_barcode } = boardgame_sell;
 
             let ArrayCategoryId = [];
             if (catagory_id) {
@@ -26,8 +26,8 @@ module.exports = {
 
             await conn.beginTransaction();
 
-            const sqlBoardgame = "INSERT INTO board_game_sale (bg_name, quantity, price, img_game_sale) VALUES (?, ?, ?, ?)";
-            const bgsave = await conn.query(sqlBoardgame, [boardgame_sell_name, boardgame_sell_quantity, boardgame_sell_price, boardgame_sell_img]);
+            const sqlBoardgame = "INSERT INTO board_game_sale (bg_name, price, img_game_sale) VALUES (?, ?, ?)";
+            const bgsave = await conn.query(sqlBoardgame, [boardgame_sell_name, boardgame_sell_price, boardgame_sell_img]);
             
             const bgid = Number(bgsave.insertId);
             

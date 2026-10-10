@@ -1030,6 +1030,27 @@ app.put("/api/boardgame/update-bgsell", uploadboardgame_sell.single('sell_img'),
     }
 });
 
+// เพิ่มจำนวนสินค้าบอร์ดเกมสำหรับขาย
+app.post("/api/boardgame/addquantity-bgsell", async (req, res,) => {
+    try {
+        console.log("boardgame/addquantity-bgsell");
+        console.log(req.decoded);
+        const barcode = req.body.barcode;
+        let result = await edit_boardgame_sell.addquantitybgsell(barcode);
+
+        if (result.isError) {
+            return res.status(400).json(result);
+        }
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: null,
+            errorMessage: err.message
+        });
+    }
+});
+
 // ลบบอร์ดเกมสำหรับขาย
 app.post("/api/boardgame/delete-bgsell", async (req, res,) => {
     try {
