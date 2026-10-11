@@ -4,7 +4,7 @@ const dateUtils = require('../libs/date_utils');
 const { error } = require('node:console');
 
 module.exports = {
-    getType: async () => {
+        getType: async () => {
         let conn;
         let result;
         try {
@@ -30,7 +30,6 @@ module.exports = {
             return result;
         }
     },
-
     
     updateType: async (typeData) => {
         let conn;

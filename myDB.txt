@@ -598,6 +598,20 @@ ALTER TABLE `play_catagory_tag_id`
     IFNULL(GROUP_CONCAT(fo.options_id SEPARATOR ', '), '-') AS option_id,
     IFNULL(GROUP_CONCAT(fo.option_name SEPARATOR ', '), '-') AS option_name
 FROM food_list fl
+JOIN food_variants fv ON fv.food_id=fl.food_id
+JOIN variants v ON v.variant_id=fv.variant_id
+ORDER BY fl.food_id ASC 
+
+
+#วันที่ 14/9/2569 ตารางเก็บ barcode สำหรับ boardgame สำหรับขาย
+CREATE TABLE `bgs_barcode` (
+	`bgs_barcode_id` INT NOT NULL AUTO_INCREMENT,
+	`bgs_barcode_number` VARCHAR(20) NULL,
+	`bg_id` INT NULL,
+	PRIMARY KEY (`bgs_barcode_id`),
+	CONSTRAINT `FK__board_game_sale` FOREIGN KEY (`bg_id`) REFERENCES `board_game_sale` (`bg_id`) ON UPDATE NO ACTION ON DELETE NO ACTION
+) AUTO_INCREMENT = 100
+COLLATE='utf8mb4_thai_520_w2';
 JOIN food_variants fv ON fv.food_id = fl.food_id
 JOIN variants v ON v.variant_id = fv.variant_id
 LEFT JOIN food_menu_options fm ON fv.food_variant_id = fm.food_variant_id
@@ -651,140 +665,3 @@ ALTER TABLE `food_variants`
 	ADD COLUMN `food_status_id` VARCHAR(1) NULL DEFAULT NULL AFTER `variant_id`,
 	ADD CONSTRAINT `FK_food_variants_food_status` FOREIGN KEY (`food_status_id`) REFERENCES `food_status` (`food_status_id`) ON UPDATE NO ACTION ON DELETE NO ACTION;
 
-DELIMITER $$
-
--- ========================================================
--- 1. เคลียร์ TRIGGER เก่าทิ้งทั้งหมด 5 ตัว
--- ========================================================
-DROP TRIGGER IF EXISTS `trg_after_order_food_insert`$$
-DROP TRIGGER IF EXISTS `trg_after_order_food_update`$$
-DROP TRIGGER IF EXISTS `trg_after_order_food_delete`$$
-DROP TRIGGER IF EXISTS `trg_after_order_food_options_insert`$$
-DROP TRIGGER IF EXISTS `trg_after_order_food_options_delete`$$
-
-
--- ========================================================
--- 2. TRIGGER สำหรับตารางหลัก: order_food
--- ========================================================
-
--- 2.1 เพิ่มจานอาหารใหม่
-CREATE TRIGGER `trg_after_order_food_insert`
-AFTER INSERT ON `order_food`
-FOR EACH ROW
-BEGIN
-    UPDATE `order` o
-    SET o.total_price = (
-        SELECT IFNULL(SUM((of.base_price + IFNULL(opt.total_opt_price, 0)) * of.quantity), 0)
-        FROM order_food of
-        LEFT JOIN (
-            SELECT ofo.order_detail_id, SUM(fo.option_price) AS total_opt_price
-            FROM order_food_options ofo
-            JOIN food_options fo ON ofo.options_id = fo.options_id
-            GROUP BY ofo.order_detail_id
-        ) opt ON of.order_detail_id = opt.order_detail_id
-        WHERE of.order_id = NEW.order_id
-          AND of.serve_status_id NOT IN ('R', 'C')
-    )
-    WHERE o.order_id = NEW.order_id;
-END$$
-
--- 2.2 เมื่อแก้ไขจำนวน, ราคา หรือกดยกเลิก/ปฏิเสธ (เปลี่ยน item_status)
-CREATE TRIGGER `trg_after_order_food_update`
-AFTER UPDATE ON `order_food`
-FOR EACH ROW
-BEGIN
-    UPDATE `order` o
-    SET o.total_price = (
-        SELECT IFNULL(SUM((of.base_price + IFNULL(opt.total_opt_price, 0)) * of.quantity), 0)
-        FROM order_food of
-        LEFT JOIN (
-            SELECT ofo.order_detail_id, SUM(fo.option_price) AS total_opt_price
-            FROM order_food_options ofo
-            JOIN food_options fo ON ofo.options_id = fo.options_id
-            GROUP BY ofo.order_detail_id
-        ) opt ON of.order_detail_id = opt.order_detail_id
-        WHERE of.order_id = NEW.order_id
-          AND of.serve_status_id NOT IN ('R', 'C')
-    )
-    WHERE o.order_id = NEW.order_id;
-END$$
-
--- 2.3 เมื่อลบรายการทิ้ง
-CREATE TRIGGER `trg_after_order_food_delete`
-AFTER DELETE ON `order_food`
-FOR EACH ROW
-BEGIN
-    UPDATE `order` o
-    SET o.total_price = (
-        SELECT IFNULL(SUM((of.base_price + IFNULL(opt.total_opt_price, 0)) * of.quantity), 0)
-        FROM order_food of
-        LEFT JOIN (
-            SELECT ofo.order_detail_id, SUM(fo.option_price) AS total_opt_price
-            FROM order_food_options ofo
-            JOIN food_options fo ON ofo.options_id = fo.options_id
-            GROUP BY ofo.order_detail_id
-        ) opt ON of.order_detail_id = opt.order_detail_id
-        WHERE of.order_id = OLD.order_id
-          AND of.serve_status_id NOT IN ('R', 'C')
-    )
-    WHERE o.order_id = OLD.order_id;
-END$$
-
-
--- ========================================================
--- 3. TRIGGER สำหรับตารางลูก: order_food_options
--- ========================================================
-
--- 3.1 เพิ่ม Option เสริม
-CREATE TRIGGER `trg_after_order_food_options_insert`
-AFTER INSERT ON `order_food_options`
-FOR EACH ROW
-BEGIN
-    DECLARE target_order_id INT;
-    SELECT order_id INTO target_order_id FROM order_food WHERE order_detail_id = NEW.order_detail_id LIMIT 1;
-
-    UPDATE `order` o
-    SET o.total_price = (
-        SELECT IFNULL(SUM((of.base_price + IFNULL(opt.total_opt_price, 0)) * of.quantity), 0)
-        FROM order_food of
-        LEFT JOIN (
-            SELECT ofo.order_detail_id, SUM(fo.option_price) AS total_opt_price
-            FROM order_food_options ofo
-            JOIN food_options fo ON ofo.options_id = fo.options_id
-            GROUP BY ofo.order_detail_id
-        ) opt ON of.order_detail_id = opt.order_detail_id
-        WHERE of.order_id = target_order_id
-          AND of.serve_status_id NOT IN ('R', 'C')
-    )
-    WHERE o.order_id = target_order_id;
-END$$
-
--- 3.2 ลบ Option เสริม
-CREATE TRIGGER `trg_after_order_food_options_delete`
-AFTER DELETE ON `order_food_options`
-FOR EACH ROW
-BEGIN
-    DECLARE target_order_id INT;
-    SELECT order_id INTO target_order_id FROM order_food WHERE order_detail_id = OLD.order_detail_id LIMIT 1;
-
-    UPDATE `order` o
-    SET o.total_price = (
-        SELECT IFNULL(SUM((of.base_price + IFNULL(opt.total_opt_price, 0)) * of.quantity), 0)
-        FROM order_food of
-        LEFT JOIN (
-            SELECT ofo.order_detail_id, SUM(fo.option_price) AS total_opt_price
-            FROM order_food_options ofo
-            JOIN food_options fo ON ofo.options_id = fo.options_id
-            GROUP BY ofo.order_detail_id
-        ) opt ON of.order_detail_id = opt.order_detail_id
-        WHERE of.order_id = target_order_id
-          AND of.serve_status_id NOT IN ('R', 'C')
-    )
-    WHERE o.order_id = target_order_id;
-END$$
-
-DELIMITER ;
-
-ALTER TABLE `order_food`
-	ADD COLUMN `device_id` VARCHAR(50) NULL DEFAULT NULL AFTER `pay_status_id`,
-	ADD COLUMN `name` VARCHAR(50) NULL DEFAULT NULL AFTER `device_id`;

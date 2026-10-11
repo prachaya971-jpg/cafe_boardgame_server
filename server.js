@@ -16,8 +16,8 @@ const optionModel = require('./report/report_option.js');
 const typeModel = require('./report/report_type.js');
 const salereport = require('./salereport/salereport.js');
 const multer = require('multer');
-const createboardgame = require('./borrow/createboardgame.js');
-const editboardgametype = require('./borrow/edit_boardgame_type.js');
+const createboardgame = require('./boardgame/createboardgame_type.js');
+const editboardgametype = require('./boardgame/edit_boardgame_type.js');
 const borrow = require('./borrow/borrow.js');
 const foodModel = require('./report/report_food.js');
 const empModel = require('./emp/emp.js')
@@ -29,14 +29,21 @@ const tablereqcus = require('./tablecus/table_req_cus.js');
 const menu = require('./customer/menu/menu.js');
 const boardgame = require('./customer/boardgame/boardgame.js');
 const { Server } = require('socket.io');
+const createboardgameborrow = require('./borrow/createboardgame_borrow.js');
+const editboardgameborrow = require('./borrow/edit_boardgame_borrow.js');
+const createboardgame_sell = require('./boardgame_for_sell/createboardgame_sell.js');
+const edit_boardgame_sell = require('./boardgame_for_sell/edit_boardgame_sell.js');
+const advicecus = require('./customer/advicecus/reqadvice.js');
+
 const app = express();
 const server = http.createServer(app);
 const path = require('path');
 const table_check = require('./tablecus/table_check.js');
+
 app.use(cors());
 app.use('/img', express.static(path.join(__dirname, 'img')));
+app.use('/img/boardgame', express.static(path.join(__dirname, 'img')));
 app.use('/img/options', express.static(path.join(__dirname, 'img/options')));
-
 
 const io = new Server(server, {
     cors: {
@@ -102,7 +109,6 @@ const checkAccessTokencus = (req, res, next) => {
         });
 }
 
-
 const storageoptions = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, path.join(__dirname, 'img/options'));
@@ -139,22 +145,48 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
+// ตำแหน่งเก็บภาพบอร์ดเกมสำหรับยืม
+const storageboardgame_borrow = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, path.join(__dirname, 'img/borrow')); 
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const ext = path.extname(file.originalname);
+        cb(null, uniqueSuffix + ext);
+    }
+});
+const uploadboardgame_borrow = multer({ storage: storageboardgame_borrow });
 
+// ตำแหน่งเก็บภาพบอร์ดเกมสำหรับขาย
+const storageboardgame_sell = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, path.join(__dirname, 'img/boardgame')); 
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const ext = path.extname(file.originalname);
+        cb(null, uniqueSuffix + ext);
+    }
+});
+const uploadboardgame_sell = multer({ storage: storageboardgame_sell });
+
+
+//authentication
 //app.get("/api/users", (req, res) => {
-//var response = {
-// isError: true,
-//data: "You are unauthorized for this data"
-//};
-//res.send(JSON.stringify(response));
+    //var response = {
+        //isError: true,
+        //data: "You are unauthorized for this data"
+   // };
+   // res.send(JSON.stringify(response));
 //});
 
 //app.get("/api/users/:accountId", async (req, res) => {
-// const accountId = req.params.accountId;
-// const response = await userAccountModel.getUserAccountById(accountId);
-//res.send(JSON.stringify(response));
+   // const accountId = req.params.accountId;
+    //const response = await userAccountModel.getUserAccountById(accountId);
+    //res.send(JSON.stringify(response));
 //});
 
-//authentication
 app.post("/api/authen/authen_request", async (req, res) => {
     console.log(req.body.authen_request)
     const authenRequest = req.body.authen_request;
@@ -232,8 +264,6 @@ app.get("/api/reports/revenue", checkAccessToken, async (req, res) => {
     const period = req.query.period || 'daily';     // 'daily', 'monthly', 'yearly'
 
     const category = req.query.category || 'all';   // 'all', 'food', 'boardgame'
-
-
 
     const result = await dashboard.getRevenueSummary(period, category);
 
@@ -320,9 +350,6 @@ app.get("/api/reports/revenue-chart", checkAccessToken, async (req, res) => {
 
 });
 
-
-
-
 app.get("/api/dashboard/topproducts", checkAccessToken, async (req, res) => {
     try {
         console.log("dashboard/topproducts");
@@ -348,8 +375,6 @@ app.post("/api/food/create-variant", checkAccessToken, async (req, res) => {
         console.log(req.decoded);
 
         const variant_name = req.body.variant_name
-
-
 
         let result = await create.createVariant({ variant_name });
 
@@ -440,7 +465,6 @@ app.post("/api/food/create-option", uploadptions.single('options_img'), checkAcc
         const options_img = req.file ? req.file.filename : null;
         const food_status_id = req.body.food_status_id;
 
-
         let result = await create.createOption({ option_name, options_img, option_price, food_status_id });
 
         if (result.isError) {
@@ -507,8 +531,6 @@ app.post("/api/food/update-option", checkAccessToken, uploadptions.single('optio
     }
 });
 
-
-
 app.post("/api/food/delete-option", checkAccessToken, async (req, res) => {
     try {
         console.log("food/delete-option");
@@ -536,8 +558,6 @@ app.post("/api/food/create-type", checkAccessToken, async (req, res) => {
         console.log(req.decoded);
 
         const type_name = req.body.type_name
-
-
 
         let result = await create.createType({ type_name });
 
@@ -617,14 +637,10 @@ app.post("/api/food/delete-type", checkAccessToken, async (req, res) => {
     }
 });
 
-
-
-
 app.get("/api/order/order-list", checkAccessToken, async (req, res) => {
     try {
         console.log("order/order-list");
         console.log(req.decoded);
-
 
         let result = await order.getorderList();
 
@@ -714,6 +730,9 @@ app.post("/api/advice/update-advice", checkAccessToken, async (req, res) => {
         const { adviceId } = req.body;
 
         let result = await advice.updateadvice(adviceId);
+        
+        io.emit("new_advice_request", {
+        });
 
         if (result.isError) {
             return res.status(400).json(result);
@@ -727,8 +746,6 @@ app.post("/api/advice/update-advice", checkAccessToken, async (req, res) => {
         });
     }
 });
-
-
 
 app.get("/api/salereport/salereport", checkAccessToken, async (req, res) => {
     try {
@@ -847,6 +864,226 @@ app.post("/api/boardgame/delete-type", checkAccessToken, async (req, res) => {
     }
 });
 
+// เพิ่มบอร์ดเกมสำหรับยืม
+app.post("/api/boardgame/create_boardgame_borrow" ,checkAccessToken, uploadboardgame_borrow.single('borrow_img'), checkAccessToken, async (req, res) => {
+    try {
+        console.log("boardgame/create_boardgame_borrow");
+        console.log(req.decoded);
+        
+        const boardgame_borrow_name = req.body.boardgame_borrow_name;
+        const boardgame_borrow_quantity = req.body.boardgame_borrow_quantity;
+        const borrow_img = req.file ? req.file.filename : null;
+        const catagory_id = req.body.catagory_id || req.body.category_id;
+        
+        let result = await createboardgameborrow.createboardgameborrow({ boardgame_borrow_name, boardgame_borrow_quantity, borrow_img, catagory_id });
+
+        if (result.isError) {
+            return res.status(400).json(result);
+        }
+
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: [],
+            errorMessage: err.message
+        });
+    }
+});
+
+// แสดงบอร์ดเกมสำหรับยืม
+app.get("/api/boardgame/report-bgborrow",checkAccessToken, async (req, res) => {
+    try {
+
+        console.log("boardgame/report-bgborrow");
+        console.log(req.decoded);
+        
+        let result = await editboardgameborrow.getbgborrow();
+
+        if (result.isError) {
+            return res.status(400).json(result);
+        }
+
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: [],
+            errorMessage: err.message
+        });
+    }
+});
+
+// ลบบอร์ดเกมสำหรับยืม
+app.post("/api/boardgame/delete-bgborrow", checkAccessToken, async (req, res,) => {
+    try {
+        console.log("boardgame/delete-bgborrow");
+        console.log(req.decoded);
+        const { bgp_id } = req.body;
+        let result = await editboardgameborrow.deletebgborrow(bgp_id);
+
+        if (result.isError) {
+            return res.status(400).json(result);
+        }
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: null,
+            errorMessage: err.message
+        });
+    }
+});
+
+//แก้ไขบอร์ดเกมสำหรับยืม
+app.post("/api/boardgame/update-bgborrow", checkAccessToken, uploadboardgame_borrow.single('borrow_img'), async (req, res) => {
+    try {
+        console.log("boardgame/update-bgborrow");
+        const boardgameplay_id = req.body.bgp_id;
+        const boardgameplay_name = req.body.bgp_name;
+        const boardgame_borrow_quantity = req.body.quantity;
+        const borrow_img = req.file ? req.file.filename : null;
+        const catagory_id = req.body.category_id;
+        
+        let result = await editboardgameborrow.updatebgborrow({ 
+            boardgameplay_id, 
+            boardgameplay_name,
+            boardgame_borrow_quantity,
+            borrow_img,
+            catagory_id
+        });
+
+        if (result.isError) {
+            return res.status(400).json(result);
+        }
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: null,
+            errorMessage: err.message
+        });
+    }
+});
+
+// เพิ่มบอร์ดเกมสำหรับขาย
+app.post("/api/boardgame_for_sell/createboardgame_sell" , checkAccessToken, uploadboardgame_sell.single('boardgame_sell_img'), async (req, res) => {
+    try {
+        console.log("boardgame_for_sell/createboardgame_sell");
+        console.log(req.decoded);
+        
+        const boardgame_sell_name = req.body.boardgame_sell_name;
+        const boardgame_sell_quantity = req.body.boardgame_sell_quantity;
+        const boardgame_sell_price = req.body.boardgame_sell_price;
+        const boardgame_sell_img = req.file ? req.file.filename : null;
+        const catagory_id = req.body.catagory_id || req.body.category_id;
+        const boardgame_sell_barcode = req.body.boardgame_sell_barcode;
+        
+        let result = await createboardgame_sell.createboardgame_sell({ boardgame_sell_name, boardgame_sell_quantity, boardgame_sell_price, boardgame_sell_img, catagory_id, boardgame_sell_barcode});
+
+        if (result.isError) {
+            return res.status(400).json(result);
+        }
+
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: [],
+            errorMessage: err.message
+        });
+    }
+});
+
+// แสดงบอร์ดเกมสำหรับขาย
+app.get("/api/boardgame/report-bgsell", checkAccessToken, async (req, res) => {
+    try {
+
+        console.log("boardgame/report-bgsell");
+        console.log(req.decoded);
+        
+        let result = await edit_boardgame_sell.getbgsell();
+
+        if (result.isError) {
+            return res.status(400).json(result);
+        }
+
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: [],
+            errorMessage: err.message
+        });
+    }
+});
+
+// แก้ไขบอร์ดเกมสำหรับขาย
+app.put("/api/boardgame/update-bgsell", checkAccessToken, uploadboardgame_sell.single('sell_img'), async (req, res) => {
+    try {
+        const sell_img = req.file ? req.file.filename : null;
+
+        const catagory_id = req.body.category_id;
+
+        let ArrayCategoryId = [];
+        if (catagory_id) {
+            if (typeof catagory_id === 'string') {
+                try {
+                    const parsed = JSON.parse(catagory_id);
+                    ArrayCategoryId = Array.isArray(parsed) ? parsed : [parsed];
+                } catch (e) {
+                    ArrayCategoryId = catagory_id.split(',').map(id => id.replace(/[\[\]\s]/g, '')).filter(Boolean);
+                }
+            } else if (Array.isArray(catagory_id)) {
+                ArrayCategoryId = catagory_id;
+            }
+        }
+
+        const boardgame_sell = {
+            boardgamesell_id: req.body.bg_id,
+            boardgamesell_name: req.body.bg_name,
+            boardgame_sell_quantity: req.body.quantity,
+            boardgame_sell_price: req.body.price,
+            sell_img: sell_img,
+            catagory_id: ArrayCategoryId // ส่ง Array ที่แปลงแล้วเข้าไป
+        };
+
+        let result = await edit_boardgame_sell.updatebgsell(boardgame_sell);
+
+        if (result.isError) {
+            return res.status(400).json(result);
+        }
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: null,
+            errorMessage: err.message
+        });
+    }
+});
+
+// ลบบอร์ดเกมสำหรับขาย
+app.post("/api/boardgame/delete-bgsell", checkAccessToken, async (req, res,) => {
+    try {
+        console.log("boardgame/delete-bgsell");
+        console.log(req.decoded);
+        const { bgs_id } = req.body;
+        let result = await edit_boardgame_sell.deletebgsell(bgs_id);
+
+        if (result.isError) {
+            return res.status(400).json(result);
+        }
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: null,
+            errorMessage: err.message
+        });
+    }
+});
+
 app.post("/api/food/update-option-status", checkAccessToken, async (req, res) => {
     try {
         const { options_id, food_status_id } = req.body;
@@ -927,6 +1164,7 @@ app.post("/api/food/create-food", checkAccessToken, upload.single('img_food_url'
         });
     }
 });
+
 app.get("/api/food/food-status", checkAccessToken, async (req, res) => {
     try {
         let result = await create.getstatusfood();
@@ -942,6 +1180,7 @@ app.get("/api/food/food-status", checkAccessToken, async (req, res) => {
         });
     }
 });
+
 app.post("/api/food/update-foodvariant", checkAccessToken, upload.single('img_food_url'), async (req, res) => {
     try {
         console.log("food/update-foodvariant");
@@ -1034,7 +1273,6 @@ app.post("/api/food/delete-food", checkAccessToken, async (req, res) => {
         });
     }
 });
-
 
 app.get("/api/emp/emp", checkAccessToken, async (req, res) => {
     try {
@@ -1242,7 +1480,6 @@ app.get('/api/emp/generate-id', checkAccessToken, async (req, res) => {
     }
 });
 
-
 app.post("/api/table/create-table", checkAccessToken, async (req, res) => {
     try {
         // console.log("table/create-table");
@@ -1374,7 +1611,7 @@ app.post("/api/table/update_table_rep",checkAccessToken, async (req, res) => {
             table_number: tableNumber,
             status: "APPROVED"
         });
-        
+
         io.emit("new_table_request", {
             table_number: tableNumber,
         });
@@ -1411,7 +1648,6 @@ app.post("/api/table/cancel_table_rep", checkAccessToken, async (req, res) => {
             table_number: tableNumber,
         });
 
-
         res.json(result);
     } catch (err) {
         res.status(500).json({ isError: true, errorMessage: err.message });
@@ -1419,8 +1655,6 @@ app.post("/api/table/cancel_table_rep", checkAccessToken, async (req, res) => {
 });
 
 //ลูกค้า
-
-
 app.post("/api/table/table_request", async (req, res) => {
     console.log(req.body.authen_request)
     const authenRequest = req.body.authen_request;
@@ -1442,7 +1676,6 @@ app.post("/api/table/table_request", async (req, res) => {
     }
     res.send(JSON.stringify(response));
 }); 
-
 
 app.post("/api/table/access_request", async (req, res) => {
     const authenToken = req.body.authen_token;
@@ -1483,9 +1716,9 @@ app.post("/api/table/access_request", async (req, res) => {
     res.send(JSON.stringify(response));
 });
 
-app.post("/api/table/cus-req-table",checkAccessTokencus, async (req, res) => {
+app.post("/api/table/cus-req-table", checkAccessTokencus, async (req, res) => {
     try {
-       const { table_number } = req.body;
+        const { table_number } = req.body;
         
         const result = await tablereqcus.reqtable(
             table_number
@@ -1509,7 +1742,7 @@ app.post("/api/table/cus-req-table",checkAccessTokencus, async (req, res) => {
     }
 });
 
-app.get("/api/menu/menu",checkAccessTokencus, async (req, res) => {
+app.get("/api/menu/menu", checkAccessTokencus, async (req, res) => {
     try {
         console.log("menu/menu");
         console.log(req.decoded);
@@ -1721,11 +1954,48 @@ app.get("/api/boardgame/sale",checkAccessTokencus, async (req, res) => {
     }
 });
 
+app.post("/api/advice-cus/reqadvice", async (req, res) => {
+    try {
+        const { table_no } = req.body;
+
+        let result = await advicecus.reqabvicecus(table_no);
+
+         io.emit("new_advice_request", {
+            table_number: table_no,
+        });
+
+        if (result.isError) {
+            return res.status(400).json(result);
+        }
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: null,
+            errorMessage: err.message
+        });
+    }
+});
+
+app.get("/api/advice-cus/getadviceList", async (req, res) => {
+    try {
+        const table_no = req.query.table_no;
+
+        const result = await advicecus.getadviceListcus(table_no);
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: [],
+            errorMessage: err.message
+        });
+    }
+});
+
 app.get("/api/test", async (req, res) => {
     console.log("5555");
     res.json({ message: "5555" });
 });
-
 
 server.listen(port, hostname, () => {
     console.log(`Server & Socket.IO running at port ${port}`);
