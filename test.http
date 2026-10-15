@@ -251,3 +251,12 @@ Content-Type: application/json
 POST http://localhost:3000/api/table/access_request
 ###
 GET http://192.168.1.4:3000/api/menu/menu
+###
+POST http://localhost:3000/api/advice-cus/reqadvice
+Content-Type: application/json
+
+{
+  "table_no": "1"
+}
+###
+GET http://localhost:3000/api/advice-cus/getadviceList?table_no=1

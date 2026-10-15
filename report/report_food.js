@@ -111,7 +111,7 @@ module.exports = {
                 [food_variant_id]
             );
 
-            // 4. บันทึกท็อปปิ้งใหม่ (แก้ไขจุด Syntax Error)
+            // 4. บันทึกท็อปปิ้งใหม่
             if (option_ids && option_ids.length > 0) {
                 const placeholders = option_ids.map(() => "(?, ?)").join(", ");
                 const sqlOptions = `INSERT INTO food_menu_options (food_variant_id, options_id) VALUES ${placeholders}`;
