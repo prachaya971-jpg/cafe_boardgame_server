@@ -211,5 +211,87 @@ module.exports = {
             if (conn) conn.release();
             return result;
         }
+    },
+    addbarcodebgsell: async (barcode, bgs_id) => {
+        let conn;
+        let result;
+        try {
+            if (!barcode) {
+                return {
+                    isError: true,
+                    data: null,
+                    errorMessage: ""
+                };
+            }
+
+            conn = await pool.getConnection();
+            const sql001 = `INSERT INTO bgs_barcode (bgs_barcode_number, bg_id) VALUES (?, ?);`;
+
+            const res = await conn.query(sql001, [barcode, bgs_id]);
+            await conn.commit();
+
+            if (res.affectedRows === 0) {
+                return {
+                    isError: true,
+                    data: null,
+                    errorMessage: "ไม่สามารถเพิ่มข้อมูลบาร์โค้ดได้"
+                };
+            }
+            result = {
+                isError: false,
+                data: null,
+                errorMessage: ""
+            };
+        } catch (error) {
+            result = {
+                isError: true,
+                data: null,
+                errorMessage: error.message
+            };
+        } finally {
+            if (conn) conn.release();
+            return result;
+        }
+    },
+    deletebarcodebgsell: async (barcode) => {
+        let conn;
+        let result;
+        try {
+            if (!barcode) {
+                return {
+                    isError: true,
+                    data: null,
+                    errorMessage: ""
+                };
+            }
+
+            conn = await pool.getConnection();
+            const sql001 = `DELETE FROM bgs_barcode WHERE bgs_barcode_number = ?`;
+
+            const res = await conn.query(sql001, [barcode]);
+            await conn.commit();
+
+            if (res.affectedRows === 0) {
+                return {
+                    isError: true,
+                    data: null,
+                    errorMessage: "ไม่สามารถเพิ่มข้อมูลบาร์โค้ดได้"
+                };
+            }
+            result = {
+                isError: false,
+                data: null,
+                errorMessage: ""
+            };
+        } catch (error) {
+            result = {
+                isError: true,
+                data: null,
+                errorMessage: error.message
+            };
+        } finally {
+            if (conn) conn.release();
+            return result;
+        }
     }
 };

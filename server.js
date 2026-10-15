@@ -1051,6 +1051,48 @@ app.post("/api/boardgame/addquantity-bgsell", async (req, res,) => {
     }
 });
 
+// เพิ่มบาร์โค้ดสำหรับบอร์ดเกม
+app.post("/api/boardgame/addbarcode-bgsell", async (req, res,) => {
+    try {
+        console.log("boardgame/addbarcode-bgsell");
+        console.log(req.decoded);
+        const { barcode, bgs_id } = req.body;
+        let result = await edit_boardgame_sell.addbarcodebgsell(barcode,bgs_id);
+
+        if (result.isError) {
+            return res.status(400).json(result);
+        }
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: null,
+            errorMessage: err.message
+        });
+    }
+});
+
+// ลบบาร์โค้ดสำหรับบอร์ดเกม
+app.post("/api/boardgame/deletebarcode_bgsell", async (req, res,) => {
+    try {
+        console.log("boardgame/deletebarcode_bgsell");
+        console.log(req.decoded);
+        const barcode = req.body.barcode;
+        let result = await edit_boardgame_sell.deletebarcodebgsell(barcode);
+
+        if (result.isError) {
+            return res.status(400).json(result);
+        }
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: null,
+            errorMessage: err.message
+        });
+    }
+});
+
 // ลบบอร์ดเกมสำหรับขาย
 app.post("/api/boardgame/delete-bgsell", async (req, res,) => {
     try {
