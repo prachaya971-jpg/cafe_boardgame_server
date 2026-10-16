@@ -89,9 +89,9 @@ updatetablereq: async (tableId, table_request_id, emp_id) => {
 
          const sql2 = `
            INSERT INTO \`order\` 
-            (table_number, date_time, order_status_id, total_price, emp_id) 
+            (table_number, date_time, order_status_id,emp_id) 
             VALUES 
-            (?, NOW(), 'N', 0.00, ?)
+            (?, NOW(), 'N', ?)
         `;
         await conn.query(sql2, [tableId,emp_id]);
 

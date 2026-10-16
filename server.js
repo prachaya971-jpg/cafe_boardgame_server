@@ -3,6 +3,7 @@ const bp = require('body-parser');
 const express = require('express');
 const userAccountModel = require('./models/user_account');
 const jwt = require('./libs/jwt');
+const generatePayload = require('promptpay-qr');
 const dateUtils = require('./libs/date_utils');
 const { isErrored } = require('stream');
 const { error, table } = require('console');
@@ -34,6 +35,8 @@ const editboardgameborrow = require('./borrow/edit_boardgame_borrow.js');
 const createboardgame_sell = require('./boardgame_for_sell/createboardgame_sell.js');
 const edit_boardgame_sell = require('./boardgame_for_sell/edit_boardgame_sell.js');
 const advicecus = require('./customer/advicecus/reqadvice.js');
+const chenckbill = require('./checkbill/checkbill.js');
+const saleboardgame = require('./checkbill/saleboardgame.js');
 
 const app = express();
 const server = http.createServer(app);
@@ -58,6 +61,13 @@ app.use(express.json());
 
 app.use(bp.urlencoded({ extended: true }));
 app.use(bp.json());
+
+app.use((req, res, next) => {
+    req.io = io;
+    next();
+});
+
+
 const hostname = '0.0.0.0';
 const port = 3000;
 
@@ -107,10 +117,10 @@ const checkAccessTokencus = (req, res, next) => {
             res.json({
                 isError: false,
                 result: false,
-                errorMessage: "ยังไม่ได้เเสกน Qr"
+                errorMessage: "ยังไม่ได้เข้าสู่ระบบ"
             });
         });
-}
+};
 
 const storageoptions = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -1645,10 +1655,18 @@ app.get("/api/table_requests/count", checkAccessToken, async (req, res) => {
 });
 
 io.on('connection', (socket) => {
+   
     socket.on('join_table_room', (tableNumber) => {
         const roomName = `table_${String(tableNumber).trim()}`;
         socket.join(roomName);
         console.log(` Socket ${socket.id} เข้าร่วมห้อง: ${roomName}`);
+    });
+
+    
+    socket.on('close_table_session', (tableNumber) => {
+        const roomName = `table_${String(tableNumber).trim()}`;
+        io.to(roomName).emit('clear_customer_token');
+        console.log(` สั่งเคลียร์ Token ลูกค้าในห้อง: ${roomName}`);
     });
 });
 
@@ -2020,7 +2038,7 @@ app.get("/api/boardgame/sale", checkAccessTokencus, async (req, res) => {
     }
 });
 
-app.post("/api/advice-cus/reqadvice", async (req, res) => {
+app.post("/api/advice-cus/reqadvice",checkAccessTokencus, async (req, res) => {
     try {
         const { table_no } = req.body;
 
@@ -2043,7 +2061,7 @@ app.post("/api/advice-cus/reqadvice", async (req, res) => {
     }
 });
 
-app.get("/api/advice-cus/getadviceList", async (req, res) => {
+app.get("/api/advice-cus/getadviceList",checkAccessToken, async (req, res) => {
     try {
         const table_no = req.query.table_no;
 
@@ -2057,6 +2075,174 @@ app.get("/api/advice-cus/getadviceList", async (req, res) => {
         });
     }
 });
+
+
+app.get("/api/checkbill/table",checkAccessToken, async (req, res) => {
+    try {
+
+        const result = await chenckbill.gettablebyorder();
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: [],
+            errorMessage: err.message
+        });
+    }
+});
+
+app.get("/api/checkbill/checkbill",checkAccessToken, async (req, res) => {
+    try {
+
+        //console.log("menu/menu");
+        //console.log(req.decoded);
+        const table = req.query.table_no;
+
+        const result = await chenckbill.getcheckbillbyorder(table);
+        res.json(result);
+    }
+    catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: [],
+            errorMessage: err.message
+        });
+    }
+});
+
+app.get("/api/checkbill/checkbillbyorder",checkAccessToken, async (req, res) => {
+    try {
+
+        //console.log("menu/menu");
+        //console.log(req.decoded);
+        const order_id = req.query.order_id;
+
+        const result = await chenckbill.getcheckbillbyorderdetail(order_id);
+        res.json(result);
+    }
+    catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: [],
+            errorMessage: err.message
+        });
+    }
+});
+
+app.get("/api/checkbill/boardgame",checkAccessToken, async (req, res) => {
+    try {
+
+        //console.log("menu/menu");
+        //console.log(req.decoded);
+        const barcodeNumber = req.query.barcode_number;
+
+        const result = await saleboardgame.getboardgames(barcodeNumber);
+        res.json(result);
+    }
+    catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: [],
+            errorMessage: err.message
+        });
+    }
+});
+
+
+//app.get('/api/payment/promptpay-qr', (req, res) => {
+    //try {
+        ///const { amount } = req.query;
+
+       // if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
+           // return res.status(400).json({ message: 'กรุณาระบุจำนวนเงินที่ถูกต้อง' });
+       // }
+       // const targetPromptPay = '0805184971';
+       // const parsedAmount = parseFloat(amount);
+
+        //const qrPayload = generatePayload(targetPromptPay, { amount: parsedAmount });
+
+       // res.json({
+           // success: true,
+           // amount: parsedAmount,
+           // qr_payload: qrPayload,
+        //});
+   // } catch (error) {
+       // res.status(500).json({ success: false, error: error.message });
+   // }
+//});
+
+
+
+io.on('connection', (socket) => {
+    console.log('Device connected:', socket.id);
+
+    // เมื่อคอมแคชเชียร์ส่งคำสั่ง "แสดง QR"
+    socket.on('show_payment_qr', ({ amount }) => {
+        const targetPromptPay = '0805184971'; // เบอร์พร้อมเพย์ร้าน
+        const qrPayload = generatePayload(targetPromptPay, { amount: parseFloat(amount) });
+
+        // ยิงไปให้จอมือถือที่ตั้งหน้าร้านแสดงผล
+        io.emit('customer_display_update', {
+            status: 'SHOW_QR',
+            amount,
+            qrPayload
+        });
+    });
+
+    // เมื่อแคชเชียร์กด "รับเงินเรียบร้อย"
+    socket.on('clear_payment_display', () => {
+        io.emit('customer_display_update', {
+            status: 'STANDBY'
+        });
+    });
+});
+
+app.post('/api/checkbill/saleboardgame',checkAccessToken, async (req, res) => {
+  try {
+    const { emp_id, total_price, items } = req.body;
+    const result = await saleboardgame.saleboardgame({ emp_id, total_price, items });
+
+    if (result.isError) {
+      return res.status(400).json(result);
+    }
+
+    return res.status(201).json(result);
+  } catch (error) {
+    return res.status(500).json({
+      isError: true,
+      errorMessage: error.message,
+    });
+  }
+});
+
+
+app.post('/api/checkbill/checkbillall', async (req, res) => {
+  try {
+    const { orderid, total_price, order_detail_ids } = req.body;
+
+    
+    const result = await chenckbill.checkbill(
+      orderid,
+      total_price,
+      order_detail_ids,
+      req.io
+    );
+
+    if (result.isError) {
+      return res.status(400).json(result);
+    }
+
+    return res.status(200).json(result);
+  } catch (error) {
+    return res.status(500).json({
+      isError: true,
+      data: [],
+      errorMessage: `Internal Server Error: ${error.message}`,
+    });
+  }
+});
+
+
 
 app.get("/api/test", async (req, res) => {
     console.log("5555");
