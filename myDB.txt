@@ -665,3 +665,93 @@ ALTER TABLE `food_variants`
 	ADD COLUMN `food_status_id` VARCHAR(1) NULL DEFAULT NULL AFTER `variant_id`,
 	ADD CONSTRAINT `FK_food_variants_food_status` FOREIGN KEY (`food_status_id`) REFERENCES `food_status` (`food_status_id`) ON UPDATE NO ACTION ON DELETE NO ACTION;
 
+CREATE DEFINER=`root`@`localhost` TRIGGER `trg_after_order_food_update` AFTER UPDATE ON `order_food` FOR EACH ROW BEGIN
+    UPDATE `order` o
+    SET o.total_price = (
+       SELECT IFNULL(SUM((of.base_price + IFNULL(opt.total_opt_price, 0)) * of.quantity), 0)
+        FROM order_food of
+        LEFT JOIN (
+            SELECT ofo.order_detail_id, SUM(fo.option_price) AS total_opt_price
+            FROM order_food_options ofo
+            JOIN food_options fo ON ofo.options_id = fo.options_id
+            GROUP BY ofo.order_detail_id
+        ) opt ON of.order_detail_id = opt.order_detail_id
+        WHERE of.order_id = NEW.order_id
+          AND of.serve_status_id NOT IN ('R', 'C')
+    )
+    WHERE o.order_id = NEW.order_id;
+END
+
+CREATE DEFINER=`root`@`localhost` TRIGGER `trg_after_order_food_options_insert` AFTER INSERT ON `order_food_options` FOR EACH ROW BEGIN
+    DECLARE target_order_id INT;
+    SELECT order_id INTO target_order_id FROM order_food WHERE order_detail_id = NEW.order_detail_id LIMIT 1;
+
+    UPDATE `order` o
+    SET o.total_price = (
+        SELECT IFNULL(SUM((of.base_price + IFNULL(opt.total_opt_price, 0)) * of.quantity), 0)
+        FROM order_food of
+        LEFT JOIN (
+            SELECT ofo.order_detail_id, SUM(fo.option_price) AS total_opt_price
+            FROM order_food_options ofo
+            JOIN food_options fo ON ofo.options_id = fo.options_id
+            GROUP BY ofo.order_detail_id
+        ) opt ON of.order_detail_id = opt.order_detail_id
+        WHERE of.order_id = target_order_id
+          AND of.serve_status_id NOT IN ('R', 'C')
+    )
+    WHERE o.order_id = target_order_id;
+END
+
+CREATE DEFINER=`root`@`localhost` TRIGGER `trg_after_order_food_options_delete` AFTER DELETE ON `order_food_options` FOR EACH ROW BEGIN
+    DECLARE target_order_id INT;
+    SELECT order_id INTO target_order_id FROM order_food WHERE order_detail_id = OLD.order_detail_id LIMIT 1;
+
+    UPDATE `order` o
+    SET o.total_price = (
+       SELECT IFNULL(SUM((of.base_price + IFNULL(opt.total_opt_price, 0)) * of.quantity), 0)
+        FROM order_food of
+        LEFT JOIN (
+            SELECT ofo.order_detail_id, SUM(fo.option_price) AS total_opt_price
+            FROM order_food_options ofo
+            JOIN food_options fo ON ofo.options_id = fo.options_id
+            GROUP BY ofo.order_detail_id
+        ) opt ON of.order_detail_id = opt.order_detail_id
+        WHERE of.order_id = target_order_id
+          AND of.serve_status_id NOT IN ('R', 'C')
+    )
+    WHERE o.order_id = target_order_id;
+END
+
+CREATE DEFINER=`root`@`localhost` TRIGGER `trg_after_order_food_insert` AFTER INSERT ON `order_food` FOR EACH ROW BEGIN
+    UPDATE `order` o
+    SET o.total_price = (
+       SELECT IFNULL(SUM((of.base_price + IFNULL(opt.total_opt_price, 0)) * of.quantity), 0)
+        FROM order_food of
+        LEFT JOIN (
+            SELECT ofo.order_detail_id, SUM(fo.option_price) AS total_opt_price
+            FROM order_food_options ofo
+            JOIN food_options fo ON ofo.options_id = fo.options_id
+            GROUP BY ofo.order_detail_id
+        ) opt ON of.order_detail_id = opt.order_detail_id
+        WHERE of.order_id = NEW.order_id
+          AND of.serve_status_id NOT IN ('R', 'C')
+    )
+    WHERE o.order_id = NEW.order_id;
+END
+
+CREATE DEFINER=`root`@`localhost` TRIGGER `trg_after_order_food_delete` AFTER DELETE ON `order_food` FOR EACH ROW BEGIN
+    UPDATE `order` o
+    SET o.total_price = (
+        SELECT IFNULL(SUM((of.base_price + IFNULL(opt.total_opt_price, 0)) * of.quantity), 0)
+        FROM order_food of
+        LEFT JOIN (
+            SELECT ofo.order_detail_id, SUM(fo.option_price) AS total_opt_price
+            FROM order_food_options ofo
+            JOIN food_options fo ON ofo.options_id = fo.options_id
+            GROUP BY ofo.order_detail_id
+        ) opt ON of.order_detail_id = opt.order_detail_id
+        WHERE of.order_id = OLD.order_id
+          AND of.serve_status_id NOT IN ('R', 'C')
+    )
+    WHERE o.order_id = OLD.order_id;
+END

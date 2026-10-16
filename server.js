@@ -3,6 +3,7 @@ const bp = require('body-parser');
 const express = require('express');
 const userAccountModel = require('./models/user_account');
 const jwt = require('./libs/jwt');
+const generatePayload = require('promptpay-qr');
 const dateUtils = require('./libs/date_utils');
 const { isErrored } = require('stream');
 const { error, table } = require('console');
@@ -34,6 +35,8 @@ const editboardgameborrow = require('./borrow/edit_boardgame_borrow.js');
 const createboardgame_sell = require('./boardgame_for_sell/createboardgame_sell.js');
 const edit_boardgame_sell = require('./boardgame_for_sell/edit_boardgame_sell.js');
 const advicecus = require('./customer/advicecus/reqadvice.js');
+const chenckbill = require('./checkbill/checkbill.js');
+const saleboardgame = require('./checkbill/saleboardgame.js');
 
 const app = express();
 const server = http.createServer(app);
@@ -58,6 +61,13 @@ app.use(express.json());
 
 app.use(bp.urlencoded({ extended: true }));
 app.use(bp.json());
+
+app.use((req, res, next) => {
+    req.io = io;
+    next();
+});
+
+
 const hostname = '0.0.0.0';
 const port = 3000;
 
@@ -104,10 +114,10 @@ const checkAccessTokencus = (req, res, next) => {
             res.json({
                 isError: false,
                 result: false,
-                errorMessage: "ยังไม่ได้เเสกน Qr"
+                errorMessage: "ยังไม่ได้เข้าสู่ระบบ"
             });
         });
-}
+};
 
 const storageoptions = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -148,7 +158,7 @@ const upload = multer({ storage: storage });
 // ตำแหน่งเก็บภาพบอร์ดเกมสำหรับยืม
 const storageboardgame_borrow = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, path.join(__dirname, 'img/borrow')); 
+        cb(null, path.join(__dirname, 'img/borrow'));
     },
     filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -161,7 +171,7 @@ const uploadboardgame_borrow = multer({ storage: storageboardgame_borrow });
 // ตำแหน่งเก็บภาพบอร์ดเกมสำหรับขาย
 const storageboardgame_sell = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, path.join(__dirname, 'img/boardgame')); 
+        cb(null, path.join(__dirname, 'img/boardgame'));
     },
     filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -174,17 +184,17 @@ const uploadboardgame_sell = multer({ storage: storageboardgame_sell });
 
 //authentication
 //app.get("/api/users", (req, res) => {
-    //var response = {
-        //isError: true,
-        //data: "You are unauthorized for this data"
-   // };
-   // res.send(JSON.stringify(response));
+//var response = {
+//isError: true,
+//data: "You are unauthorized for this data"
+// };
+// res.send(JSON.stringify(response));
 //});
 
 //app.get("/api/users/:accountId", async (req, res) => {
-   // const accountId = req.params.accountId;
-    //const response = await userAccountModel.getUserAccountById(accountId);
-    //res.send(JSON.stringify(response));
+// const accountId = req.params.accountId;
+//const response = await userAccountModel.getUserAccountById(accountId);
+//res.send(JSON.stringify(response));
 //});
 
 app.post("/api/authen/authen_request", async (req, res) => {
@@ -679,7 +689,7 @@ app.post("/api/order/update-order-server", checkAccessToken, async (req, res) =>
     }
 });
 
-app.post("/api/order/cancel-order",checkAccessToken, async (req, res) => {
+app.post("/api/order/cancel-order", checkAccessToken, async (req, res) => {
     try {
         console.log("order/cancel-order");
         console.log(req.decoded);
@@ -730,7 +740,7 @@ app.post("/api/advice/update-advice", checkAccessToken, async (req, res) => {
         const { adviceId } = req.body;
 
         let result = await advice.updateadvice(adviceId);
-        
+
         io.emit("new_advice_request", {
         });
 
@@ -865,16 +875,16 @@ app.post("/api/boardgame/delete-type", checkAccessToken, async (req, res) => {
 });
 
 // เพิ่มบอร์ดเกมสำหรับยืม
-app.post("/api/boardgame/create_boardgame_borrow" ,checkAccessToken, uploadboardgame_borrow.single('borrow_img'), checkAccessToken, async (req, res) => {
+app.post("/api/boardgame/create_boardgame_borrow", checkAccessToken, uploadboardgame_borrow.single('borrow_img'), checkAccessToken, async (req, res) => {
     try {
         console.log("boardgame/create_boardgame_borrow");
         console.log(req.decoded);
-        
+
         const boardgame_borrow_name = req.body.boardgame_borrow_name;
         const boardgame_borrow_quantity = req.body.boardgame_borrow_quantity;
         const borrow_img = req.file ? req.file.filename : null;
         const catagory_id = req.body.catagory_id || req.body.category_id;
-        
+
         let result = await createboardgameborrow.createboardgameborrow({ boardgame_borrow_name, boardgame_borrow_quantity, borrow_img, catagory_id });
 
         if (result.isError) {
@@ -892,12 +902,12 @@ app.post("/api/boardgame/create_boardgame_borrow" ,checkAccessToken, uploadboard
 });
 
 // แสดงบอร์ดเกมสำหรับยืม
-app.get("/api/boardgame/report-bgborrow",checkAccessToken, async (req, res) => {
+app.get("/api/boardgame/report-bgborrow", checkAccessToken, async (req, res) => {
     try {
 
         console.log("boardgame/report-bgborrow");
         console.log(req.decoded);
-        
+
         let result = await editboardgameborrow.getbgborrow();
 
         if (result.isError) {
@@ -944,9 +954,9 @@ app.post("/api/boardgame/update-bgborrow", checkAccessToken, uploadboardgame_bor
         const boardgame_borrow_quantity = req.body.quantity;
         const borrow_img = req.file ? req.file.filename : null;
         const catagory_id = req.body.category_id;
-        
-        let result = await editboardgameborrow.updatebgborrow({ 
-            boardgameplay_id, 
+
+        let result = await editboardgameborrow.updatebgborrow({
+            boardgameplay_id,
             boardgameplay_name,
             boardgame_borrow_quantity,
             borrow_img,
@@ -967,19 +977,19 @@ app.post("/api/boardgame/update-bgborrow", checkAccessToken, uploadboardgame_bor
 });
 
 // เพิ่มบอร์ดเกมสำหรับขาย
-app.post("/api/boardgame_for_sell/createboardgame_sell" , checkAccessToken, uploadboardgame_sell.single('boardgame_sell_img'), async (req, res) => {
+app.post("/api/boardgame_for_sell/createboardgame_sell", checkAccessToken, uploadboardgame_sell.single('boardgame_sell_img'), async (req, res) => {
     try {
         console.log("boardgame_for_sell/createboardgame_sell");
         console.log(req.decoded);
-        
+
         const boardgame_sell_name = req.body.boardgame_sell_name;
         const boardgame_sell_quantity = req.body.boardgame_sell_quantity;
         const boardgame_sell_price = req.body.boardgame_sell_price;
         const boardgame_sell_img = req.file ? req.file.filename : null;
         const catagory_id = req.body.catagory_id || req.body.category_id;
         const boardgame_sell_barcode = req.body.boardgame_sell_barcode;
-        
-        let result = await createboardgame_sell.createboardgame_sell({ boardgame_sell_name, boardgame_sell_quantity, boardgame_sell_price, boardgame_sell_img, catagory_id, boardgame_sell_barcode});
+
+        let result = await createboardgame_sell.createboardgame_sell({ boardgame_sell_name, boardgame_sell_quantity, boardgame_sell_price, boardgame_sell_img, catagory_id, boardgame_sell_barcode });
 
         if (result.isError) {
             return res.status(400).json(result);
@@ -1001,7 +1011,7 @@ app.get("/api/boardgame/report-bgsell", checkAccessToken, async (req, res) => {
 
         console.log("boardgame/report-bgsell");
         console.log(req.decoded);
-        
+
         let result = await edit_boardgame_sell.getbgsell();
 
         if (result.isError) {
@@ -1019,7 +1029,7 @@ app.get("/api/boardgame/report-bgsell", checkAccessToken, async (req, res) => {
 });
 
 // แก้ไขบอร์ดเกมสำหรับขาย
-app.put("/api/boardgame/update-bgsell", checkAccessToken, uploadboardgame_sell.single('sell_img'), async (req, res) => {
+app.put("/api/boardgame/update-bgsell", uploadboardgame_sell.single('sell_img'), async (req, res) => {
     try {
         const sell_img = req.file ? req.file.filename : null;
 
@@ -1049,6 +1059,27 @@ app.put("/api/boardgame/update-bgsell", checkAccessToken, uploadboardgame_sell.s
         };
 
         let result = await edit_boardgame_sell.updatebgsell(boardgame_sell);
+
+        if (result.isError) {
+            return res.status(400).json(result);
+        }
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: null,
+            errorMessage: err.message
+        });
+    }
+});
+
+// เพิ่มจำนวนสินค้าบอร์ดเกมสำหรับขาย
+app.post("/api/boardgame/addquantity-bgsell", async (req, res,) => {
+    try {
+        console.log("boardgame/addquantity-bgsell");
+        console.log(req.decoded);
+        const barcode = req.body.barcode;
+        let result = await edit_boardgame_sell.addquantitybgsell(barcode);
 
         if (result.isError) {
             return res.status(400).json(result);
@@ -1579,14 +1610,22 @@ app.get("/api/table_requests/count", checkAccessToken, async (req, res) => {
 });
 
 io.on('connection', (socket) => {
+   
     socket.on('join_table_room', (tableNumber) => {
         const roomName = `table_${String(tableNumber).trim()}`;
         socket.join(roomName);
         console.log(` Socket ${socket.id} เข้าร่วมห้อง: ${roomName}`);
     });
+
+    
+    socket.on('close_table_session', (tableNumber) => {
+        const roomName = `table_${String(tableNumber).trim()}`;
+        io.to(roomName).emit('clear_customer_token');
+        console.log(` สั่งเคลียร์ Token ลูกค้าในห้อง: ${roomName}`);
+    });
 });
 
-app.post("/api/table/update_table_rep",checkAccessToken, async (req, res) => {
+app.post("/api/table/update_table_rep", checkAccessToken, async (req, res) => {
     try {
 
         const tableNumber = req.body.tableNumber;
@@ -1595,7 +1634,7 @@ app.post("/api/table/update_table_rep",checkAccessToken, async (req, res) => {
 
 
 
-        let result = await tablereq.updatetablereq(tableNumber, table_request_id,emp_id);
+        let result = await tablereq.updatetablereq(tableNumber, table_request_id, emp_id);
 
         if (result.isError) {
             return res.status(400).json(result);
@@ -1675,7 +1714,7 @@ app.post("/api/table/table_request", async (req, res) => {
         }
     }
     res.send(JSON.stringify(response));
-}); 
+});
 
 app.post("/api/table/access_request", async (req, res) => {
     const authenToken = req.body.authen_token;
@@ -1719,7 +1758,7 @@ app.post("/api/table/access_request", async (req, res) => {
 app.post("/api/table/cus-req-table", checkAccessTokencus, async (req, res) => {
     try {
         const { table_number } = req.body;
-        
+
         const result = await tablereqcus.reqtable(
             table_number
         );
@@ -1759,12 +1798,12 @@ app.get("/api/menu/menu", checkAccessTokencus, async (req, res) => {
     }
 });
 
-app.get("/api/menu/menubyid",checkAccessTokencus, async (req, res) => {
+app.get("/api/menu/menubyid", checkAccessTokencus, async (req, res) => {
     try {
 
         //console.log("menu/menu");
         //console.log(req.decoded);
-       const foodvarianid = req.query.id;
+        const foodvarianid = req.query.id;
 
         const result = await menu.getmenuListByid(foodvarianid);
         res.json(result);
@@ -1778,12 +1817,12 @@ app.get("/api/menu/menubyid",checkAccessTokencus, async (req, res) => {
     }
 });
 
-app.get("/api/menu/menuoptionbyid",checkAccessTokencus, async (req, res) => {
+app.get("/api/menu/menuoptionbyid", checkAccessTokencus, async (req, res) => {
     try {
 
         //console.log("menu/menu");
         //console.log(req.decoded);
-       const foodvarianid = req.query.id;
+        const foodvarianid = req.query.id;
 
         const result = await menu.getmenuoptionByid(foodvarianid);
         res.json(result);
@@ -1797,11 +1836,11 @@ app.get("/api/menu/menuoptionbyid",checkAccessTokencus, async (req, res) => {
     }
 });
 
-app.post('/api/menu/reqorder',checkAccessTokencus, async (req, res) => {
+app.post('/api/menu/reqorder', checkAccessTokencus, async (req, res) => {
     try {
         const { table_number, base_price, quantity, food_variant_id, name, drive_id, options } = req.body;
 
-       
+
         const result = await menu.reqorder({
             table_number,
             base_price,
@@ -1835,15 +1874,15 @@ app.post('/api/menu/reqorder',checkAccessTokencus, async (req, res) => {
     }
 });
 
-app.get("/api/menu/orderbyid",checkAccessTokencus, async (req, res) => {
+app.get("/api/menu/orderbyid", checkAccessTokencus, async (req, res) => {
     try {
 
         //console.log("menu/menu");
         //console.log(req.decoded);
-       const drive_id = req.query.id;
-       const table_number = req.query.table_number;
+        const drive_id = req.query.id;
+        const table_number = req.query.table_number;
 
-        const result = await menu.getordercusByid(drive_id,table_number);
+        const result = await menu.getordercusByid(drive_id, table_number);
         res.json(result);
     }
     catch (err) {
@@ -1855,12 +1894,12 @@ app.get("/api/menu/orderbyid",checkAccessTokencus, async (req, res) => {
     }
 });
 
-app.get("/api/menu/orderdetailbyid",checkAccessTokencus, async (req, res) => {
+app.get("/api/menu/orderdetailbyid", checkAccessTokencus, async (req, res) => {
     try {
 
         //console.log("menu/menu");
         //console.log(req.decoded);
-       const orderDetailId = req.query.id;
+        const orderDetailId = req.query.id;
 
         const result = await menu.getordercusdetailByid(orderDetailId);
         res.json(result);
@@ -1874,12 +1913,12 @@ app.get("/api/menu/orderdetailbyid",checkAccessTokencus, async (req, res) => {
     }
 });
 
-app.get("/api/menu/orderoptionbyid",checkAccessTokencus, async (req, res) => {
+app.get("/api/menu/orderoptionbyid", checkAccessTokencus, async (req, res) => {
     try {
 
         //console.log("menu/menu");
         //console.log(req.decoded);
-       const orderDetailId = req.query.id;
+        const orderDetailId = req.query.id;
 
         const result = await menu.getordercusoptionByid(orderDetailId);
         res.json(result);
@@ -1893,7 +1932,7 @@ app.get("/api/menu/orderoptionbyid",checkAccessTokencus, async (req, res) => {
     }
 });
 
-app.post("/api/menu/cancel-cus-order",checkAccessTokencus, async (req, res) => {
+app.post("/api/menu/cancel-cus-order", checkAccessTokencus, async (req, res) => {
     try {
         //console.log("order/cancel-order");
         //console.log(req.decoded);
@@ -1920,7 +1959,7 @@ app.post("/api/menu/cancel-cus-order",checkAccessTokencus, async (req, res) => {
 
 
 
-app.get("/api/boardgame/play",checkAccessTokencus, async (req, res) => {
+app.get("/api/boardgame/play", checkAccessTokencus, async (req, res) => {
     try {
         //console.log("menu/menu");
         //console.log(req.decoded);
@@ -1937,7 +1976,7 @@ app.get("/api/boardgame/play",checkAccessTokencus, async (req, res) => {
     }
 });
 
-app.get("/api/boardgame/sale",checkAccessTokencus, async (req, res) => {
+app.get("/api/boardgame/sale", checkAccessTokencus, async (req, res) => {
     try {
         //console.log("menu/menu");
         //console.log(req.decoded);
@@ -1954,13 +1993,13 @@ app.get("/api/boardgame/sale",checkAccessTokencus, async (req, res) => {
     }
 });
 
-app.post("/api/advice-cus/reqadvice", async (req, res) => {
+app.post("/api/advice-cus/reqadvice",checkAccessTokencus, async (req, res) => {
     try {
         const { table_no } = req.body;
 
         let result = await advicecus.reqabvicecus(table_no);
 
-         io.emit("new_advice_request", {
+        io.emit("new_advice_request", {
             table_number: table_no,
         });
 
@@ -1977,7 +2016,7 @@ app.post("/api/advice-cus/reqadvice", async (req, res) => {
     }
 });
 
-app.get("/api/advice-cus/getadviceList", async (req, res) => {
+app.get("/api/advice-cus/getadviceList",checkAccessToken, async (req, res) => {
     try {
         const table_no = req.query.table_no;
 
@@ -1991,6 +2030,174 @@ app.get("/api/advice-cus/getadviceList", async (req, res) => {
         });
     }
 });
+
+
+app.get("/api/checkbill/table",checkAccessToken, async (req, res) => {
+    try {
+
+        const result = await chenckbill.gettablebyorder();
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: [],
+            errorMessage: err.message
+        });
+    }
+});
+
+app.get("/api/checkbill/checkbill",checkAccessToken, async (req, res) => {
+    try {
+
+        //console.log("menu/menu");
+        //console.log(req.decoded);
+        const table = req.query.table_no;
+
+        const result = await chenckbill.getcheckbillbyorder(table);
+        res.json(result);
+    }
+    catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: [],
+            errorMessage: err.message
+        });
+    }
+});
+
+app.get("/api/checkbill/checkbillbyorder",checkAccessToken, async (req, res) => {
+    try {
+
+        //console.log("menu/menu");
+        //console.log(req.decoded);
+        const order_id = req.query.order_id;
+
+        const result = await chenckbill.getcheckbillbyorderdetail(order_id);
+        res.json(result);
+    }
+    catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: [],
+            errorMessage: err.message
+        });
+    }
+});
+
+app.get("/api/checkbill/boardgame",checkAccessToken, async (req, res) => {
+    try {
+
+        //console.log("menu/menu");
+        //console.log(req.decoded);
+        const barcodeNumber = req.query.barcode_number;
+
+        const result = await saleboardgame.getboardgames(barcodeNumber);
+        res.json(result);
+    }
+    catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: [],
+            errorMessage: err.message
+        });
+    }
+});
+
+
+//app.get('/api/payment/promptpay-qr', (req, res) => {
+    //try {
+        ///const { amount } = req.query;
+
+       // if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
+           // return res.status(400).json({ message: 'กรุณาระบุจำนวนเงินที่ถูกต้อง' });
+       // }
+       // const targetPromptPay = '0805184971';
+       // const parsedAmount = parseFloat(amount);
+
+        //const qrPayload = generatePayload(targetPromptPay, { amount: parsedAmount });
+
+       // res.json({
+           // success: true,
+           // amount: parsedAmount,
+           // qr_payload: qrPayload,
+        //});
+   // } catch (error) {
+       // res.status(500).json({ success: false, error: error.message });
+   // }
+//});
+
+
+
+io.on('connection', (socket) => {
+    console.log('Device connected:', socket.id);
+
+    // เมื่อคอมแคชเชียร์ส่งคำสั่ง "แสดง QR"
+    socket.on('show_payment_qr', ({ amount }) => {
+        const targetPromptPay = '0805184971'; // เบอร์พร้อมเพย์ร้าน
+        const qrPayload = generatePayload(targetPromptPay, { amount: parseFloat(amount) });
+
+        // ยิงไปให้จอมือถือที่ตั้งหน้าร้านแสดงผล
+        io.emit('customer_display_update', {
+            status: 'SHOW_QR',
+            amount,
+            qrPayload
+        });
+    });
+
+    // เมื่อแคชเชียร์กด "รับเงินเรียบร้อย"
+    socket.on('clear_payment_display', () => {
+        io.emit('customer_display_update', {
+            status: 'STANDBY'
+        });
+    });
+});
+
+app.post('/api/checkbill/saleboardgame',checkAccessToken, async (req, res) => {
+  try {
+    const { emp_id, total_price, items } = req.body;
+    const result = await saleboardgame.saleboardgame({ emp_id, total_price, items });
+
+    if (result.isError) {
+      return res.status(400).json(result);
+    }
+
+    return res.status(201).json(result);
+  } catch (error) {
+    return res.status(500).json({
+      isError: true,
+      errorMessage: error.message,
+    });
+  }
+});
+
+
+app.post('/api/checkbill/checkbillall', async (req, res) => {
+  try {
+    const { orderid, total_price, order_detail_ids } = req.body;
+
+    
+    const result = await chenckbill.checkbill(
+      orderid,
+      total_price,
+      order_detail_ids,
+      req.io
+    );
+
+    if (result.isError) {
+      return res.status(400).json(result);
+    }
+
+    return res.status(200).json(result);
+  } catch (error) {
+    return res.status(500).json({
+      isError: true,
+      data: [],
+      errorMessage: `Internal Server Error: ${error.message}`,
+    });
+  }
+});
+
+
 
 app.get("/api/test", async (req, res) => {
     console.log("5555");

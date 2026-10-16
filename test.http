@@ -260,3 +260,48 @@ Content-Type: application/json
 }
 ###
 GET http://localhost:3000/api/advice-cus/getadviceList?table_no=1
+
+###
+GET http://localhost:3000/api/checkbill/table
+###
+GET http://localhost:3000/api/checkbill/checkbill?table_no=1
+###
+
+GET http://localhost:3000/api/checkbill/checkbillbyorder?order_id=30
+
+
+###
+GET http://localhost:3000/api/checkbill/boardgame?barcode_number=12
+####
+
+GET http://localhost:3000/api/payment/promptpay-qr?amount=200
+###
+POST http://localhost:3000/api/checkbill/saleboardgame
+Content-Type: application/json
+
+{
+  "emp_id": 1,
+  "total_price": 8.00,
+  "items": [
+    {
+      "bg_id": 212,
+      "unit_price": 2.00,
+      "quantity": 2
+    },
+    {
+      "bg_id": 203,
+      "unit_price": 4.00,
+      "quantity": 1
+    }
+  ]
+}
+
+###
+POST  http://localhost:3000/api/checkbill/checkbillall
+Content-Type: application/json
+
+{
+  "orderid":34,
+  "total_price":24,
+  "order_detail_ids": [66]
+}
