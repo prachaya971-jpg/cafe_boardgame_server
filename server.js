@@ -1160,6 +1160,89 @@ app.post("/api/boardgame/delete-bgsell", checkAccessToken, async (req, res,) => 
     }
 });
 
+// เพิ่มการจอง
+app.post("/api/boardgame/boardgameborrow-borrow",  async (req, res,) => {
+    try {
+        const barcode = req.body.barcode;
+        const tableNum = req.body.table_number;
+        let result = await borrow.borrowboardgame_borrow(barcode,tableNum);
+
+    if (result.isError) {
+            return res.status(400).json(result);
+        }
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: null,
+            errorMessage: err.message
+        });
+    }
+});
+// แสดงข้อมูลการยืมบอร์ดเกมฝั่งลูกค้า
+app.get("/api/boardgame/cusborrowdetail", checkAccessTokencus, async (req, res) => {
+    try {
+        const tableNum = req.query.table_number;
+        let result = await borrow.borrowboardgame_cusborrowfetch(tableNum);
+    if (result.isError) {
+            return res.status(400).json(result);
+        }
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: null,
+            errorMessage: err.message
+        });
+    }
+});
+// คืน 1 บอร์ดเกมสำหรับลูกค้า
+app.post("/api/boardgame/return_item", checkAccessTokencus, async (req, res) => {
+    try {
+        const { borrow_id, table_number, date_time } = req.body;
+
+        let result = await borrow.returnboardgame_item(borrow_id, table_number, date_time);
+
+        if (result.isError) {
+            return res.status(400).json(result);
+        }
+
+        return res.json({
+            isError: false,
+            message: "คืนบอร์ดเกมเรียบร้อยแล้ว"
+        });
+    } catch (err) {
+        return res.status(500).json({
+            isError: true,
+            data: null,
+            errorMessage: err.message
+        });
+    }
+});
+
+// คืนบอร์ดเกมทั้งหมดสำหรับลูกค้า
+app.post("/api/boardgame/return_all", checkAccessTokencus, async (req, res) => {
+    try {
+        const { table_number } = req.body;
+
+        let result = await borrow.borrowboardgame_cusreturnall(table_number);
+
+        if (result.isError) {
+            return res.status(400).json(result);
+        }
+
+        return res.json({
+            isError: false,
+            message: "คืนบอร์ดเกมทั้งหมดเรียบร้อยแล้ว"
+        });
+    } catch (err) {
+        return res.status(500).json({
+            isError: true,
+            data: null,
+            errorMessage: err.message
+        });
+    }
+});
 app.post("/api/food/update-option-status", checkAccessToken, async (req, res) => {
     try {
         const { options_id, food_status_id } = req.body;
@@ -2147,31 +2230,6 @@ app.get("/api/checkbill/boardgame",checkAccessToken, async (req, res) => {
         });
     }
 });
-
-
-//app.get('/api/payment/promptpay-qr', (req, res) => {
-    //try {
-        ///const { amount } = req.query;
-
-       // if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
-           // return res.status(400).json({ message: 'กรุณาระบุจำนวนเงินที่ถูกต้อง' });
-       // }
-       // const targetPromptPay = '0805184971';
-       // const parsedAmount = parseFloat(amount);
-
-        //const qrPayload = generatePayload(targetPromptPay, { amount: parsedAmount });
-
-       // res.json({
-           // success: true,
-           // amount: parsedAmount,
-           // qr_payload: qrPayload,
-        //});
-   // } catch (error) {
-       // res.status(500).json({ success: false, error: error.message });
-   // }
-//});
-
-
 
 io.on('connection', (socket) => {
     console.log('Device connected:', socket.id);
