@@ -313,4 +313,29 @@ module.exports = {
         return result;
     }
 },
+getsaleempdetail: async (emp_id) => {
+    let conn;
+    try {
+        conn = await pool.getConnection();
+
+        const sql = `SELECT * FROM v_sale_report WHERE emp_id = ?`; 
+
+        const rows = await conn.query(sql, [emp_id]);
+        
+        return {
+            isError: false,
+            data: rows,
+            errorMessage: ""
+        };
+    } catch (error) {
+        return {
+            isError: true,
+            data: [],
+            errorMessage: error.message
+        };
+    } finally {
+        if (conn) conn.release();
+    }
+}
+
 }

@@ -305,3 +305,11 @@ Content-Type: application/json
   "total_price":24,
   "order_detail_ids": [66]
 }
+###
+GET http://localhost:3000/api/salereport/saledetail?order_id=44
+###
+GET http://localhost:3000/api/salereport/saleempdetail?emp_id=1
+
+###
+
+POST http://localhost:3000/api/table/updete-status-table?table_no=2

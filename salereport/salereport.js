@@ -35,5 +35,29 @@ getsalereport: async (searchDate) => {
         if (conn) conn.release();
         return result;
     }
+},
+getsalereportdetail: async (order_id) => {
+    let conn;
+    try {
+        conn = await pool.getConnection();
+
+        const sql = `SELECT * FROM v_sale_detail WHERE order_id = ?`; 
+
+        const rows = await conn.query(sql, [order_id]);
+        
+        return {
+            isError: false,
+            data: rows,
+            errorMessage: ""
+        };
+    } catch (error) {
+        return {
+            isError: true,
+            data: [],
+            errorMessage: error.message
+        };
+    } finally {
+        if (conn) conn.release();
+    }
 }
 }
