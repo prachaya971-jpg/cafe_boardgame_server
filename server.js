@@ -42,6 +42,7 @@ const app = express();
 const server = http.createServer(app);
 const path = require('path');
 const table_check = require('./tablecus/table_check.js');
+const { query } = require('./libs/db_pool.js');
 
 app.use(cors());
 app.use('/img', express.static(path.join(__dirname, 'img')));
@@ -767,6 +768,24 @@ app.get("/api/salereport/salereport", checkAccessToken, async (req, res) => {
         console.log(req.decoded);
         const { date } = req.query;
         let result = await salereport.getsalereport(date);
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: [],
+            errorMessage: err.message
+        });
+    }
+});
+
+app.get("/api/salereport/saledetail", async (req, res) => {
+    try {
+        console.log("salereport/saledetail");
+
+        const { order_id } = req.query;
+
+
+        let result = await salereport.getsalereportdetail(order_id);
         res.json(result);
     } catch (err) {
         res.status(500).json({
@@ -1639,6 +1658,42 @@ app.get('/api/emp/generate-id', checkAccessToken, async (req, res) => {
     }
 });
 
+app.get("/api/salereport/saleempdetail", async (req, res) => {
+    try {
+        console.log("salereport/saledetail");
+
+        const { emp_id } = req.query;
+
+
+        let result = await empModel.getsaleempdetail(emp_id);
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: [],
+            errorMessage: err.message
+        });
+    }
+});
+
+app.get("/api/salereport/boardgamesale", async (req, res) => {
+    try {
+        console.log("salereport/boardgamesale");
+
+        const { date } = req.query;
+
+
+        let result = await salereport.getboardgamesalereport(date);
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: [],
+            errorMessage: err.message
+        });
+    }
+});
+
 app.post("/api/table/create-table", checkAccessToken, async (req, res) => {
     try {
         // console.log("table/create-table");
@@ -1702,6 +1757,33 @@ app.post("/api/table/delete-table", checkAccessToken, async (req, res) => {
     }
 });
 
+app.post("/api/table/updete-status-table", async (req, res) => {
+    try {
+        const table_no = req.body?.table_no;
+
+        if (!table_no) {
+            return res.status(400).json({
+                isError: true,
+                data: null,
+                errorMessage: "กรุณาระบุหมายเลขโต๊ะ (table_no)"
+            });
+        }
+
+        let result = await tableModel.updatetablestatus(table_no, req.io);
+
+        if (result.isError) {
+            return res.status(400).json(result);
+        }
+
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            isError: true,
+            data: null,
+            errorMessage: err.message
+        });
+    }
+});
 app.get("/api/table/table-req-list", checkAccessToken, async (req, res) => {
     try {
 
@@ -1738,14 +1820,14 @@ app.get("/api/table_requests/count", checkAccessToken, async (req, res) => {
 });
 
 io.on('connection', (socket) => {
-   
+
     socket.on('join_table_room', (tableNumber) => {
         const roomName = `table_${String(tableNumber).trim()}`;
         socket.join(roomName);
         console.log(` Socket ${socket.id} เข้าร่วมห้อง: ${roomName}`);
     });
 
-    
+
     socket.on('close_table_session', (tableNumber) => {
         const roomName = `table_${String(tableNumber).trim()}`;
         io.to(roomName).emit('clear_customer_token');
@@ -1887,13 +1969,12 @@ app.post("/api/table/cus-req-table", checkAccessTokencus, async (req, res) => {
     try {
         const { table_number } = req.body;
 
-        const result = await tablereqcus.reqtable(
-            table_number
-        );
+       
+        const result = await tablereqcus.reqtable(table_number);
+    
 
-        io.emit("new_table_request", {
-            table_number: table_number,
-        });
+        io.emit("new_table_request", { table_number: table_number });
+        
 
         if (result.isError) {
             return res.status(400).json(result);
@@ -2121,7 +2202,7 @@ app.get("/api/boardgame/sale", checkAccessTokencus, async (req, res) => {
     }
 });
 
-app.post("/api/advice-cus/reqadvice",checkAccessTokencus, async (req, res) => {
+app.post("/api/advice-cus/reqadvice", checkAccessTokencus, async (req, res) => {
     try {
         const { table_no } = req.body;
 
@@ -2144,7 +2225,7 @@ app.post("/api/advice-cus/reqadvice",checkAccessTokencus, async (req, res) => {
     }
 });
 
-app.get("/api/advice-cus/getadviceList",checkAccessToken, async (req, res) => {
+app.get("/api/advice-cus/getadviceList", checkAccessToken, async (req, res) => {
     try {
         const table_no = req.query.table_no;
 
@@ -2160,7 +2241,7 @@ app.get("/api/advice-cus/getadviceList",checkAccessToken, async (req, res) => {
 });
 
 
-app.get("/api/checkbill/table",checkAccessToken, async (req, res) => {
+app.get("/api/checkbill/table", checkAccessToken, async (req, res) => {
     try {
 
         const result = await chenckbill.gettablebyorder();
@@ -2174,7 +2255,7 @@ app.get("/api/checkbill/table",checkAccessToken, async (req, res) => {
     }
 });
 
-app.get("/api/checkbill/checkbill",checkAccessToken, async (req, res) => {
+app.get("/api/checkbill/checkbill", checkAccessToken, async (req, res) => {
     try {
 
         //console.log("menu/menu");
@@ -2193,7 +2274,7 @@ app.get("/api/checkbill/checkbill",checkAccessToken, async (req, res) => {
     }
 });
 
-app.get("/api/checkbill/checkbillbyorder",checkAccessToken, async (req, res) => {
+app.get("/api/checkbill/checkbillbyorder", checkAccessToken, async (req, res) => {
     try {
 
         //console.log("menu/menu");
@@ -2212,7 +2293,7 @@ app.get("/api/checkbill/checkbillbyorder",checkAccessToken, async (req, res) => 
     }
 });
 
-app.get("/api/checkbill/boardgame",checkAccessToken, async (req, res) => {
+app.get("/api/checkbill/boardgame", checkAccessToken, async (req, res) => {
     try {
 
         //console.log("menu/menu");
@@ -2255,49 +2336,49 @@ io.on('connection', (socket) => {
     });
 });
 
-app.post('/api/checkbill/saleboardgame',checkAccessToken, async (req, res) => {
-  try {
-    const { emp_id, total_price, items } = req.body;
-    const result = await saleboardgame.saleboardgame({ emp_id, total_price, items });
+app.post('/api/checkbill/saleboardgame', checkAccessToken, async (req, res) => {
+    try {
+        const { emp_id, total_price, items } = req.body;
+        const result = await saleboardgame.saleboardgame({ emp_id, total_price, items });
 
-    if (result.isError) {
-      return res.status(400).json(result);
+        if (result.isError) {
+            return res.status(400).json(result);
+        }
+
+        return res.status(201).json(result);
+    } catch (error) {
+        return res.status(500).json({
+            isError: true,
+            errorMessage: error.message,
+        });
     }
-
-    return res.status(201).json(result);
-  } catch (error) {
-    return res.status(500).json({
-      isError: true,
-      errorMessage: error.message,
-    });
-  }
 });
 
 
 app.post('/api/checkbill/checkbillall', async (req, res) => {
-  try {
-    const { orderid, total_price, order_detail_ids } = req.body;
+    try {
+        const { orderid, total_price, order_detail_ids } = req.body;
 
-    
-    const result = await chenckbill.checkbill(
-      orderid,
-      total_price,
-      order_detail_ids,
-      req.io
-    );
 
-    if (result.isError) {
-      return res.status(400).json(result);
+        const result = await chenckbill.checkbill(
+            orderid,
+            total_price,
+            order_detail_ids,
+            req.io
+        );
+
+        if (result.isError) {
+            return res.status(400).json(result);
+        }
+
+        return res.status(200).json(result);
+    } catch (error) {
+        return res.status(500).json({
+            isError: true,
+            data: [],
+            errorMessage: `Internal Server Error: ${error.message}`,
+        });
     }
-
-    return res.status(200).json(result);
-  } catch (error) {
-    return res.status(500).json({
-      isError: true,
-      data: [],
-      errorMessage: `Internal Server Error: ${error.message}`,
-    });
-  }
 });
 
 
